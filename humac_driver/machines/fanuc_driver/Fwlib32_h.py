@@ -176,6 +176,22 @@ class AxisData(ctypes.Structure):
 
 ODBAXDT = AxisData
 
+class ODBSYS(ctypes.Structure):
+    """
+    Reads system information such as kind of CNC system, Machining(M) or Turning(T), series and version of CNC system software and number of the controlled axes.
+    Use this function to confirm compatibility of CNC's system software and PMC's software or to get the number of controllable axes before reading axis coordinate data such as absolute, machine position.
+    """
+    _pack_ = 4
+    _fields_ = [('dummy',ctypes.c_short),
+                ("max_axis",ctypes.c_char*2),
+                ('cnc_type',ctypes.c_char*2),
+                ('mt_type',ctypes.c_char*2),
+                ('series',ctypes.c_char*2),
+                ('version',ctypes.c_char*2),
+                ('axes',ctypes.c_char*2)]
+
+sysinfo = ODBSYS 
+
 
 class AlarmRecord(ctypes.Structure):
     _pack_ = 4
