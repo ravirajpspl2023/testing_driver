@@ -85,6 +85,7 @@ class FocasDriver(object):
         fanuc.restype = c_short
         machine_info = sysinfo()
         result = fanuc(handle,machine_info)
+        logging.info(f"result of machine info {result}")
         data['max_axis'] = machine_info.max_axis
         data['cnc_type'] = machine_info.cnc_type
         data['mt_type '] = machine_info.mt_type
@@ -151,10 +152,10 @@ class FocasDriver(object):
                 
     def _get_poll_methods(self):
         return [
+            self.get_cnc_sysinfo,
             self.getProgramName,
             self.getBlockNumber,
             self.getActiveTool,
-            self.get_cnc_sysinfo
         ]
     
     def _run_function(self, func):
