@@ -78,24 +78,24 @@ class FocasDriver(object):
             return handle.value
         return None
     
-    def get_cnc_sysinfo(self,handle):
-        data = {"ts": time.time_ns() // 1_000_000}
-        start_time= time.perf_counter()
-        fanuc = fwlib.cnc_sysinfo
-        fanuc.restype = c_short
-        machine_info = sysinfo()
-        result = fanuc(handle,machine_info)
-        logging.info(f"result of machine info {result}")
-        data['max_axis'] = machine_info.max_axis
-        data['cnc_type'] = machine_info.cnc_type
-        data['mt_type '] = machine_info.mt_type
-        data['series'] = machine_info.series
-        data['version'] = machine_info.version
-        data['axes'] = machine_info.axes
-        end_time = time.perf_counter()
-        data['time'] = end_time-start_time
-        logging.info(f"machine info: {data}")
-        return data
+    # def get_cnc_sysinfo(self,handle):
+    #     data = {"ts": time.time_ns() // 1_000_000}
+    #     start_time= time.perf_counter()
+    #     fanuc = fwlib.cnc_sysinfo
+    #     fanuc.restype = c_short
+    #     machine_info = sysinfo()
+    #     result = fanuc(handle,machine_info)
+    #     logging.info(f"result of machine info {result}")
+    #     data['max_axis'] = machine_info.max_axis
+    #     data['cnc_type'] = machine_info.cnc_type
+    #     data['mt_type '] = machine_info.mt_type
+    #     data['series'] = machine_info.series
+    #     data['version'] = machine_info.version
+    #     data['axes'] = machine_info.axes
+    #     end_time = time.perf_counter()
+    #     data['time'] = end_time-start_time
+    #     logging.info(f"machine info: {data}")
+    #     return data
 
     def getProgramName(self, handle):
         data = {"ts":time.time_ns() // 1_000_000 }
@@ -152,7 +152,7 @@ class FocasDriver(object):
                 
     def _get_poll_methods(self):
         return [
-            self.get_cnc_sysinfo,
+            # self.get_cnc_sysinfo,
             self.getProgramName,
             self.getBlockNumber,
             self.getActiveTool,
