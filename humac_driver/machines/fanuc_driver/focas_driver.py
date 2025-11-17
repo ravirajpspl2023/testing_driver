@@ -106,6 +106,12 @@ class FocasDriver(object):
         logging.info(f"result of blockNumber {result}")
         # FocasExceptionRaiser(result, context=self)
         data["blockNumber"] = dynamic.sequenceNumber
+        data['axis'] = dynamic.axis
+        data['alarm'] = dynamic.alarm
+        data['programNumber'] = dynamic.programNumber
+        data['actualFeed'] = dynamic.actualFeed
+        data['actualSpindleSpeed'] = dynamic.actualSpindleSpeed
+        data['position'] = dynamic.position
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
@@ -137,18 +143,7 @@ class FocasDriver(object):
         return func()
     
     def poll(self, handle) -> Dict[str, Any]:
-            # methods = self._get_poll_methods()
-            # method_names = [m.__name__ for m in methods]
-            # logging.info(method_names)
 
-            # def run_method(method):
-            #     return method(handle)  # handle is valid here because threads share memory
-
-            # with ThreadPoolExecutor(max_workers=3) as executor:
-            #     results = list(executor.map(run_method, methods))
-
-            # return dict(zip(method_names, results))
-            
             results = {}
             for method in self._get_poll_methods():
                 results[method.__name__] = method(handle)
