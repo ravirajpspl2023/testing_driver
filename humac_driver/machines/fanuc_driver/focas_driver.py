@@ -93,6 +93,7 @@ class FocasDriver(object):
         data['axes'] = machine_info.axes
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
+        logging.info(f"machine info: {data}")
         return data
 
     def getProgramName(self, handle):
