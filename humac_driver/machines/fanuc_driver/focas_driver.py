@@ -11,6 +11,11 @@ from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
 import logging
 from humac_driver.const import *
+
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 extradlls=[]
 fwlib = None
@@ -136,12 +141,22 @@ class FocasDriver(object):
             methods = self._get_poll_methods()
             method_names = [m.__name__ for m in methods]
             logging.info(method_names)
-            partial_funcs = [partial(method, handle) for method in methods]
 
-            with mp.Pool(processes=len(methods)) as pool:
-                results = pool.map(self._run_function, partial_funcs)
-            
+            bound_methods = [lambda m=m: m(handle) for m in methods]
+
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                results = list(executor.map(lambda f: f(), bound_methods))
+
             return dict(zip(method_names, results))
+            # methods = self._get_poll_methods()
+            # method_names = [m.__name__ for m in methods]
+            # logging.info(method_names)
+            # partial_funcs = [partial(method, handle) for method in methods]
+
+            # with mp.Pool(processes=len(methods)) as pool:
+            #     results = pool.map(self._run_function, partial_funcs)
+            
+            # return dict(zip(method_names, results))
 
     
     def disconnect(self, handle):
