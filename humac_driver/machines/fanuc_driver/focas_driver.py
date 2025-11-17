@@ -133,7 +133,7 @@ class FocasDriver(object):
             methods = self._get_poll_methods()
             method_names = [m.__name__ for m in methods]
             logging.info(method_names)
-            partial_funcs = [partial(method, id) for method in methods]
+            partial_funcs = [partial(method, handle) for method in methods]
 
             with mp.Pool(processes=len(methods)) as pool:
                 results = pool.map(self._run_function, partial_funcs)
