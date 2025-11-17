@@ -137,21 +137,22 @@ class FocasDriver(object):
         return func()
     
     def poll(self, handle) -> Dict[str, Any]:
-            methods = self._get_poll_methods()
-            method_names = [m.__name__ for m in methods]
-            logging.info(method_names)
+            # methods = self._get_poll_methods()
+            # method_names = [m.__name__ for m in methods]
+            # logging.info(method_names)
 
-            def run_method(method):
-                return method(handle)  # handle is valid here because threads share memory
+            # def run_method(method):
+            #     return method(handle)  # handle is valid here because threads share memory
 
-            with ThreadPoolExecutor(max_workers=3) as executor:
-                results = list(executor.map(run_method, methods))
+            # with ThreadPoolExecutor(max_workers=3) as executor:
+            #     results = list(executor.map(run_method, methods))
 
-            return dict(zip(method_names, results))
-            # results = {}
-            # for method in self._get_poll_methods():
-            #     results[method.__name__] = method(handle)
-            # return results
+            # return dict(zip(method_names, results))
+            
+            results = {}
+            for method in self._get_poll_methods():
+                results[method.__name__] = method(handle)
+            return results
     
             # methods = self._get_poll_methods()
             # method_names = [m.__name__ for m in methods]
