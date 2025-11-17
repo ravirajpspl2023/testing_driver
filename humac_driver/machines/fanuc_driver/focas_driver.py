@@ -81,6 +81,7 @@ class FocasDriver(object):
         func.restype = c_short
         executingProgram = ExecutingProgram()
         result = func(handle, byref(executingProgram))
+        logging.info(f"result of program {result}")
         # FocasExceptionRaiser(result, context=self)
         data["programName"] = executingProgram.name
         data["oNumber"] = executingProgram.oNumber
@@ -98,6 +99,7 @@ class FocasDriver(object):
                       -1,
                       sizeof(DynamicResult),
                       byref(dynamic))
+        logging.info(f"result of blockNumber {result}")
         # FocasExceptionRaiser(result, context=self)
         data["blockNumber"] = dynamic.sequenceNumber
         end_time = time.perf_counter()
@@ -111,6 +113,7 @@ class FocasDriver(object):
         func.restype = c_short
         modalData = ModalData()
         result = func(handle, 108, 1, byref(modalData))
+        logging.info(f"result of active tool {result}")
         # FocasExceptionRaiser(result, context=self)
         data["activeTool"] = modalData.modal.aux.aux_data
         end_time = time.perf_counter()
