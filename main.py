@@ -9,8 +9,8 @@ if __name__ == "__main__":
     config = {
         "machines":[
             {"ip":"192.168.1.190", "port":1883,"timeout":5,"edgid" :"VMC03"},
-            {'ip':"192.168.1.196", "port":1883,"timeout":2,"edgid" :"VMC08"},
-            {'ip':"193.168.0.4", "port":1883,"timeout":8,"edgid" :"ed4200003"}
+            # {'ip':"192.168.1.196", "port":1883,"timeout":2,"edgid" :"VMC08"},
+            # {'ip':"193.168.0.4", "port":1883,"timeout":8,"edgid" :"ed4200003"}
         ]
     }
     driver = HumacDriver(config=config)
