@@ -483,8 +483,15 @@ class path(ctypes.Structure):
         ("ctrl_srvo",  ctypes.c_short),
         ("ctrl_spdl",  ctypes.c_short),
         ("mchn_no",    ctypes.c_short),
-        ("reserved",   ctypes.c_short),
-    ]
+        ("reserved",   ctypes.c_short)]
+    
+    @property
+    def __dict__(self):
+        data = dict((f, getattr(self, f)) for f, _ in self._fields_)
+        return data
+
+
+
 MAX_PATH =10
 
 class ODBSYSEX(ctypes.Structure):
@@ -505,12 +512,12 @@ class ODBSYSEX(ctypes.Structure):
         ("ctrl_mchn",ctypes.c_short), # number of control machines
         ("reserved",  ctypes.c_short * 3), 
         # Array of path structures
-        ("path",       path * MAX_PATH),]
+        ("path", path * MAX_PATH),]
     
-    # Optional: pretty printing
-    def __repr__(self):
-        return f"<ODBSYSEX axes={self.ctrl_axis} paths={self.ctrl_path} spindles={self.ctrl_spdl}>"
-    
-    def get_active_paths(self):
-        """Return list of path info only for actually used paths"""
-        return [self.path[i] for i in range(self.ctrl_path)]
+    @property
+    def __dict__(self):
+        data = dict((f, getattr(self, f)) for f, _ in self._fields_)
+        paths = [self.path[i].to_dict() for i in range(self.ctrl_path)]
+        data.update({'path': paths})
+        data.pop("reserved", None)
+        return data

@@ -85,18 +85,8 @@ class FocasDriver(object):
         fanuc.restype = c_short
         machine_info = ODBSYSEX()
         result = fanuc(handle,byref(machine_info))
-        logging.info(f"result of machine info {result}")
-        data['max_axis'] = machine_info.max_axis
-        data['max_spdl'] = machine_info.max_spdl
-        data['max_path'] = machine_info.max_path
-        data['max_mchn'] = machine_info.max_mchn
-        data['ctrl_axis']= machine_info.ctrl_axis
-        data['ctrl_srvo'] = machine_info.ctrl_srvo
-        data['ctrl_spdl'] = machine_info.ctrl_spdl
-        data['ctrl_path'] = machine_info.ctrl_path
-        data['ctrl_mchn'] = machine_info.ctrl_mchn
-        for i, p in enumerate(machine_info.get_active_paths()):
-            logging.info(f"Path {i+1}: system={p.system}, axes={p.ctrl_axis}, spindles={p.ctrl_spdl}, group={p.mchn_no}")
+        logging.info(f"get_syst info result {result}")
+        data.update(machine_info.__dict__)
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         logging.info(f"machine info: {data}")
