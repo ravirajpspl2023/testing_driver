@@ -60,7 +60,6 @@ class FocasDriver(object):
                     logging.error(f"FOCAS init failed with code: {init_ret}")
             
             func = fwlib.cnc_allclibhndl3
-
             func.argtypes = [
                 c_char_p,           # IP address (string)
                 c_ushort,           # Port number
@@ -81,12 +80,17 @@ class FocasDriver(object):
     def get_cnc_sysinfo(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
+        fanuc = fwlib.cnc_sysinfo
+        fanuc.restype = c_short
+        machine =  ODBSYS()
+        result = fanuc(handle,byref(machine))
+        data.update(machine.__dict__)
+        
         fanuc = fwlib.cnc_sysinfo_ex
         fanuc.restype = c_short
-        machine_info = ODBSYSEX()
-        result = fanuc(handle,byref(machine_info))
-        logging.info(f"get_syst info result {result}")
-        data.update(machine_info.__dict__)
+        system = ODBSYSEX()
+        result = fanuc(handle,byref(system))
+        data.update(system.__dict__)
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         logging.info(f"machine info: {data}")
@@ -146,9 +150,9 @@ class FocasDriver(object):
            
     def _get_poll_methods(self):
         return [
-            self.getProgramName,
-            self.getBlockNumber,
-            self.getActiveTool,
+            # self.getProgramName,
+            # self.getBlockNumber,
+            # self.getActiveTool,
             self.get_cnc_sysinfo
         ]
     

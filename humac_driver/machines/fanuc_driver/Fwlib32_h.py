@@ -176,23 +176,6 @@ class AxisData(ctypes.Structure):
 
 ODBAXDT = AxisData
 
-class ODBSYS(ctypes.Structure):
-    """
-    Reads system information such as kind of CNC system, Machining(M) or Turning(T), series and version of CNC system software and number of the controlled axes.
-    Use this function to confirm compatibility of CNC's system software and PMC's software or to get the number of controllable axes before reading axis coordinate data such as absolute, machine position.
-    """
-    _pack_ = 4
-    _fields_ = [('addinfo',ctypes.c_short),
-                ("max_axis",ctypes.c_short),
-                ('cnc_type',ctypes.c_char*2),
-                ('mt_type',ctypes.c_char*2),
-                ('series',ctypes.c_char*2),
-                ('version',ctypes.c_char*2),
-                ('axes',ctypes.c_char*2)]
-
-sysinfo = ODBSYS 
-
-
 class AlarmRecord(ctypes.Structure):
     _pack_ = 4
     _fields_ = [("recordType", ctypes.c_short),
@@ -520,4 +503,24 @@ class ODBSYSEX(ctypes.Structure):
         paths = [self.path[i].__dict__ for i in range(self.ctrl_path)]
         data.update({'path': paths})
         data.pop("reserved", None)
+        return data
+
+class ODBSYS(ctypes.Structure):
+    """
+    Reads system information such as kind of CNC system, Machining(M) or Turning(T), series and version of CNC system software and number of the controlled axes.
+    Use this function to confirm compatibility of CNC's system software and PMC's software or to get the number of controllable axes before reading axis coordinate data such as absolute, machine position.
+    """
+    _pack_ = 4
+    _fields_ = [('dummy',ctypes.c_short),
+                ("max_axis",ctypes.c_short),
+                ('cnc_type',ctypes.c_char*2),
+                ('mt_type',ctypes.c_char*2),
+                ('series',ctypes.c_char*2),
+                ('version',ctypes.c_char*4),
+                ('axes',ctypes.c_char*2)]
+    
+    @property
+    def __dict__(self):
+        data = dict((f, getattr(self, f)) for f, _ in self._fields_)
+        MAX_AXIS = self.max_axis
         return data
