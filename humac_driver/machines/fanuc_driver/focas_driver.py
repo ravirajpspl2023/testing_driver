@@ -80,11 +80,11 @@ class FocasDriver(object):
     def get_cnc_sysinfo(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
-        fanuc = fwlib.cnc_sysinfo
-        fanuc.restype = c_short
-        machine =  ODBSYS()
-        result = fanuc(handle,byref(machine))
-        data.update(machine.__dict__)
+        # fanuc = fwlib.cnc_sysinfo
+        # fanuc.restype = c_short
+        # machine =  ODBSYS()
+        # result = fanuc(handle,byref(machine))
+        # data.update(machine.__dict__)
 
         fanuc = fwlib.cnc_sysinfo_ex
         fanuc.restype = c_short
