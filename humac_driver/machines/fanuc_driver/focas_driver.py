@@ -126,7 +126,6 @@ class FocasDriver(object):
         data['actualFeed'] = dynamic.actualFeed
         data['actualSpindleSpeed'] = dynamic.actualSpindleSpeed
         data['position'] = dynamic.position
-        logging.info(DynamicResult.__dict__())
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
@@ -144,8 +143,7 @@ class FocasDriver(object):
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
-
-                
+           
     def _get_poll_methods(self):
         return [
             self.getProgramName,
