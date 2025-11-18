@@ -84,7 +84,7 @@ class FocasDriver(object):
         fanuc = fwlib.cnc_sysinfo
         fanuc.restype = c_short
         machine_info = sysinfo()
-        result = fanuc(handle,machine_info)
+        result = fanuc(handle,byref(machine_info))
         logging.info(f"result of machine info {result}")
         data['max_axis'] = machine_info.max_axis
         data['cnc_type'] = machine_info.cnc_type
