@@ -513,7 +513,7 @@ class ODBSYS(ctypes.Structure):
     """
     _pack_ = 4
     _fields_ = [('dummy',ctypes.c_short),
-                ("max_axis",ctypes.c_short),
+                ("max_axis",ctypes.c_char*2),
                 ('cnc_type',ctypes.c_char*2),
                 ('mt_type',ctypes.c_char*2),
                 ('series',ctypes.c_char*2),
@@ -523,5 +523,4 @@ class ODBSYS(ctypes.Structure):
     @property
     def __dict__(self):
         data = dict((f, getattr(self, f)) for f, _ in self._fields_)
-        MAX_AXIS = self.max_axis
         return data
