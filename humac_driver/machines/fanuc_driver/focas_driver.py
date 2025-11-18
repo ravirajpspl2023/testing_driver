@@ -152,7 +152,7 @@ class FocasDriver(object):
                 
     def _get_poll_methods(self):
         return [
-            # self.get_cnc_sysinfo,
+            self.get_cnc_sysinfo,
             self.getProgramName,
             self.getBlockNumber,
             self.getActiveTool,
