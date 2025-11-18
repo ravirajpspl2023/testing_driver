@@ -517,7 +517,7 @@ class ODBSYSEX(ctypes.Structure):
     @property
     def __dict__(self):
         data = dict((f, getattr(self, f)) for f, _ in self._fields_)
-        paths = [self.path[i].to_dict() for i in range(self.ctrl_path)]
+        paths = [self.path[i].__dict__ for i in range(self.ctrl_path)]
         data.update({'path': paths})
         data.pop("reserved", None)
         return data
