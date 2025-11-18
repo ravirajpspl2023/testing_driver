@@ -81,17 +81,22 @@ class FocasDriver(object):
     def get_cnc_sysinfo(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
-        fanuc = fwlib.cnc_sysinfo
+        fanuc = fwlib.cnc_sysinfo_ex
         fanuc.restype = c_short
-        machine_info = sysinfo()
+        machine_info = ODBSYSEX()
         result = fanuc(handle,byref(machine_info))
         logging.info(f"result of machine info {result}")
         data['max_axis'] = machine_info.max_axis
-        data['cnc_type'] = machine_info.cnc_type
-        data['mt_type '] = machine_info.mt_type
-        data['series'] = machine_info.series
-        data['version'] = machine_info.version
-        data['axes'] = machine_info.axes
+        data['max_spdl'] = machine_info.max_spdl
+        data['max_path'] = machine_info.max_path
+        data['max_mchn'] = machine_info.max_mchn
+        data['ctrl_axis']= machine_info.ctrl_axis
+        data['ctrl_srvo'] = machine_info.ctrl_srvo
+        data['ctrl_spdl'] = machine_info.ctrl_spdl
+        data['ctrl_path'] = machine_info.ctrl_path
+        data['ctrl_mchn'] = machine_info.ctrl_mchn
+        for i, p in enumerate(machine_info.get_active_paths()):
+            logging.info(f"Path {i+1}: system={p.system}, axes={p.ctrl_axis}, spindles={p.ctrl_spdl}, group={p.mchn_no}")
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         logging.info(f"machine info: {data}")
@@ -152,10 +157,10 @@ class FocasDriver(object):
                 
     def _get_poll_methods(self):
         return [
-            self.get_cnc_sysinfo,
             self.getProgramName,
             self.getBlockNumber,
             self.getActiveTool,
+            self.get_cnc_sysinfo
         ]
     
     def _run_function(self, func):

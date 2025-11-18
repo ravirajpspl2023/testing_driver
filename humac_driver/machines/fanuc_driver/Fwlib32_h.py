@@ -457,15 +457,60 @@ ODBPRO = ProgramData
 
 
 class ToolGroupInfo(ctypes.Structure):
+    _pack_ = 4
     _fields_ = [
         ("group", ctypes.c_short),
         ("dummy", ctypes.c_short),
     ]
 
 class ToolLifeData(ctypes.Structure):
+    _pack_ = 4
     _fields_ = [
         ("use_life", ctypes.c_long),
         ("max_life", ctypes.c_long),
         ("life_unit", ctypes.c_short),  # 0: minute, 1: times
         ("dummy", ctypes.c_short),
     ]
+
+
+class path(ctypes.Structure):
+    _pack_ = 4
+    _fields_ = [
+        ("system",     ctypes.c_short),
+        ("group",      ctypes.c_short),
+        ("attrib",     ctypes.c_short),
+        ("ctrl_axis",  ctypes.c_short),
+        ("ctrl_srvo",  ctypes.c_short),
+        ("ctrl_spdl",  ctypes.c_short),
+        ("mchn_no",    ctypes.c_short),
+        ("reserved",   ctypes.c_short),
+    ]
+MAX_PATH =10
+
+class ODBSYSEX(ctypes.Structure):
+    """
+    Reads system information such as distinction of Machining(M) or Turning(T), number of path and number of the controlled axes.
+    Use this function to confirm compatibility of CNC's system software and PMC's software or to get the number of controllable axes before reading axis coordinate data such as absolute, machine position.
+    """
+    _pack_ = 4
+    _fields_ =[
+        ("max_axis",ctypes.c_short), # maximum controlled axes
+        ("max_spdl",ctypes.c_short), # maximum spundle number
+        ("max_path",ctypes.c_short), # maximum path number 
+        ("max_mchn",ctypes.c_short), # maximum machining group number
+        ("ctrl_axis",ctypes.c_short), # controlled axes number 
+        ("ctrl_srvo",ctypes.c_short), # servo axis number 
+        ("ctrl_spdl",ctypes.c_short), # spindle number     
+        ("ctrl_path",ctypes.c_short), # path number  
+        ("ctrl_mchn",ctypes.c_short), # number of control machines
+        ("reserved",  ctypes.c_short * 3), 
+        # Array of path structures
+        ("path",       path * MAX_PATH),]
+    
+    # Optional: pretty printing
+    def __repr__(self):
+        return f"<ODBSYSEX axes={self.ctrl_axis} paths={self.ctrl_path} spindles={self.ctrl_spdl}>"
+    
+    def get_active_paths(self):
+        """Return list of path info only for actually used paths"""
+        return [self.path[i] for i in range(self.ctrl_path)]
