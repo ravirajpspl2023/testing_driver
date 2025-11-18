@@ -516,7 +516,7 @@ class ODBSYS(ctypes.Structure):
                 ("max_axis",ctypes.c_short),
                 ('cnc_type',ctypes.c_char*2),
                 ('mt_type',ctypes.c_char*2),
-                ('series',ctypes.c_char*2),
+                ('series',ctypes.c_char*4),
                 ('version',ctypes.c_char*4),
                 ('axes',ctypes.c_char*2)]
     
