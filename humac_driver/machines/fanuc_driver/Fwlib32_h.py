@@ -512,8 +512,8 @@ class ODBSYS(ctypes.Structure):
     Use this function to confirm compatibility of CNC's system software and PMC's software or to get the number of controllable axes before reading axis coordinate data such as absolute, machine position.
     """
     _pack_ = 4
-    _fields_ = [('dummy',ctypes.c_short),
-                ("max_axis",ctypes.c_char*2),
+    _fields_ = [('addinfo',ctypes.c_short),
+                ("max_axis",ctypes.c_short),
                 ('cnc_type',ctypes.c_char*2),
                 ('mt_type',ctypes.c_char*2),
                 ('series',ctypes.c_char*2),
