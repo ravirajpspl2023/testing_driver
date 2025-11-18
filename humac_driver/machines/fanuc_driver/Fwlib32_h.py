@@ -504,6 +504,7 @@ class ODBSYSEX(ctypes.Structure):
         data.update({'path': paths})
         data.pop("reserved", None)
         return data
+    
 
 class ODBSYS(ctypes.Structure):
     """

@@ -85,7 +85,7 @@ class FocasDriver(object):
         machine =  ODBSYS()
         result = fanuc(handle,byref(machine))
         data.update(machine.__dict__)
-        
+
         fanuc = fwlib.cnc_sysinfo_ex
         fanuc.restype = c_short
         system = ODBSYSEX()
@@ -93,7 +93,6 @@ class FocasDriver(object):
         data.update(system.__dict__)
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
-        logging.info(f"machine info: {data}")
         return data
 
     def getProgramName(self, handle):
@@ -153,7 +152,7 @@ class FocasDriver(object):
             # self.getProgramName,
             # self.getBlockNumber,
             # self.getActiveTool,
-            self.get_cnc_sysinfo
+            self.get_cnc_sysinfo,
         ]
     
     def _run_function(self, func):
