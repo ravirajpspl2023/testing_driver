@@ -76,7 +76,8 @@ class FocasDriver(object):
             logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
             return handle.value
         return None
-    def get_cnc_mainfo(self,handle):
+    
+    def get_cnc_sysinfo(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
         fanuc = fwlib.cnc_sysinfo
@@ -84,14 +85,6 @@ class FocasDriver(object):
         machine =  ODBSYS()
         result = fanuc(handle,byref(machine))
         data.update(machine.__dict__)
-        end_time = time.perf_counter()
-        data['time'] = end_time-start_time
-        return data
-    
-    def get_cnc_sysinfo(self,handle):
-        data = {"ts": time.time_ns() // 1_000_000}
-        start_time= time.perf_counter()
-
         fanuc = fwlib.cnc_sysinfo_ex
         fanuc.restype = c_short
         system = ODBSYSEX()
@@ -155,7 +148,6 @@ class FocasDriver(object):
            
     def _get_poll_methods(self):
         return [
-            self.get_cnc_mainfo,
             # self.getProgramName,
             # self.getBlockNumber,
             # self.getActiveTool,
