@@ -18,14 +18,13 @@ For example, for documentation on "AlarmStatus", look up "ODBALM".
 
 import ctypes
 
-"""Constants"""
-
-MAX_AXIS = 32
-"""int: The maximum number of axes a control will return"""
-
-ALL_AXES = -1
-"""int: A constant value to request that a function return all axes at once"""
-
+class CNC_CONF:
+    """Constants"""
+    MAX_AXIS = 32
+    """int: The maximum number of axes a control will return"""
+    ALL_AXES = -1
+    """int: A constant value to request that a function return all axes at once"""
+CNC = CNC_CONF()
 
 DATAIO_ALARM_MASK = (0x1 << 2) | (0x1 << 7)
 SERVO_ALARM_MASK = 0x1 << 6
@@ -123,9 +122,8 @@ class ModalAuxUnion(ctypes.Union):
                 ("g_1shot", ctypes.c_char * 4),
                 ("aux", ModalAux),
                 ("raux1", ModalAux * 27),
-                ("raux2", ModalAux * MAX_AXIS), ]
-
-
+                ("raux2", ModalAux * CNC.MAX_AXIS), ]
+    
 class ModalData(ctypes.Structure):
     """
     Equivalent of ODBMDL
@@ -134,7 +132,7 @@ class ModalData(ctypes.Structure):
     _fields_ = [("datano", ctypes.c_short),
                 ("type", ctypes.c_short),
                 ("modal", ModalAuxUnion), ]
-
+    
 ODBMDL = ModalData
 
 
@@ -333,10 +331,10 @@ IODBPMC = PMC
 
 class FAxis(ctypes.Structure):
     _pack_ = 4
-    _fields_ = [("_absolute", ctypes.c_long * MAX_AXIS),
-                ("_machine", ctypes.c_long * MAX_AXIS),
-                ("_relative", ctypes.c_long * MAX_AXIS),
-                ("_distance", ctypes.c_long * MAX_AXIS), ]
+    _fields_ = [("_absolute", ctypes.c_long * CNC.MAX_AXIS),
+                ("_machine", ctypes.c_long * CNC.MAX_AXIS),
+                ("_relative", ctypes.c_long * CNC.MAX_AXIS),
+                ("_distance", ctypes.c_long * CNC.MAX_AXIS), ]
 
     @property
     def __dict__(self):
@@ -523,4 +521,5 @@ class ODBSYS(ctypes.Structure):
     @property
     def __dict__(self):
         data = dict((f, getattr(self, f)) for f, _ in self._fields_)
+        CNC.MAX_AXIS = self.max_axis
         return data

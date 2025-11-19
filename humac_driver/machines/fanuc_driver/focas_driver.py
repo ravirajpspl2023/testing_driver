@@ -85,6 +85,15 @@ class FocasDriver(object):
         machine =  ODBSYS()
         result = fanuc(handle,byref(machine))
         data.update(machine.__dict__)
+
+        fanuc = fwlib.cnc_getpath
+        fanuc.restype = c_short
+        current_path = ctypes.c_short()
+        max_paths    = ctypes.c_short()
+        result = fwlib.cnc_getpath(handle, ctypes.byref(current_path), ctypes.byref(max_paths))
+
+        logging.info(f"current_path: {current_path},max_path: {max_paths}")
+
         fanuc = fwlib.cnc_sysinfo_ex
         fanuc.restype = c_short
         system = ODBSYSEX()
