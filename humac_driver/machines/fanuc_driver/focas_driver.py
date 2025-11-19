@@ -91,7 +91,8 @@ class FocasDriver(object):
         current_path = ctypes.c_short()
         max_paths    = ctypes.c_short()
         result = fwlib.cnc_getpath(handle, ctypes.byref(current_path), ctypes.byref(max_paths))
-
+        CNC.MAX_PATH = max_paths
+        CNC.CURRENT_PATH = current_path
         logging.info(f"current_path: {current_path.value},max_path: {max_paths.value}")
 
         fanuc = fwlib.cnc_sysinfo_ex

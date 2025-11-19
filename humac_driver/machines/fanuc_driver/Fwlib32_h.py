@@ -24,6 +24,8 @@ class CNC_CONF:
     """int: The maximum number of axes a control will return"""
     ALL_AXES = -1
     """int: A constant value to request that a function return all axes at once"""
+    MAX_PATH = 10
+    CURRENT_PATH = None
 CNC = CNC_CONF()
 
 DATAIO_ALARM_MASK = (0x1 << 2) | (0x1 << 7)
@@ -471,10 +473,6 @@ class path(ctypes.Structure):
         data = dict((f, getattr(self, f)) for f, _ in self._fields_)
         return data
 
-
-
-MAX_PATH =10
-
 class ODBSYSEX(ctypes.Structure):
     """
     Reads system information such as distinction of Machining(M) or Turning(T), number of path and number of the controlled axes.
@@ -493,7 +491,7 @@ class ODBSYSEX(ctypes.Structure):
         ("ctrl_mchn",ctypes.c_short), # number of control machines
         ("reserved",  ctypes.c_short * 3), 
         # Array of path structures
-        ("path", path * MAX_PATH),]
+        ("path", path * CNC.MAX_PATH),]
     
     @property
     def __dict__(self):
