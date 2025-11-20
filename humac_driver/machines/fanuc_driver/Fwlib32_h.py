@@ -574,7 +574,7 @@ class ODBST2(ctypes.Structure):
         ('mstb',ctypes.c_short),
         ('emergency',ctypes.c_short),
         ('alarm',ctypes.c_short),
-        ('edit',ctypes.c_short)
+        ('edit',ctypes.c_short),
         ('warning',ctypes.c_short),
         ('o3dchk',ctypes.c_short),
         ('ext_opt',ctypes.c_short),
