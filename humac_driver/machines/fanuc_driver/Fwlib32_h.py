@@ -523,7 +523,7 @@ class ODBSYS(ctypes.Structure):
         return data
     
 class ODBST(ctypes.Structure):
-    _pack_=4
+    _pack_ = 4
     _fields_ =[
                 ('dummy',ctypes.c_short*2),
                 ('aut',ctypes.c_short),
