@@ -24,7 +24,7 @@ class CNC_CONF:
     """int: The maximum number of axes a control will return"""
     ALL_AXES = -1
     """int: A constant value to request that a function return all axes at once"""
-    MAX_PATH = 10
+    MAX_PATH = None
     CURRENT_PATH = None
 CNC = CNC_CONF()
 
@@ -495,10 +495,9 @@ class ODBSYSEX(ctypes.Structure):
     
     @property
     def __dict__(self):
-        data = dict((f, getattr(self, f)) for f, _ in self._fields_)
+        data = dict((f, getattr(self, f)) for f, _ in self._fields_ if f != "reserved")
         paths = [self.path[i].__dict__ for i in range(self.ctrl_path)]
         data.update({'path': paths})
-        data.pop("reserved", None)
         return data
     
 
@@ -541,5 +540,5 @@ class ODBST(ctypes.Structure):
     
     @property
     def __dict__(self):
-        data = dict((f, getattr(self, f)) for f, _ in self._fields_)
+        data = dict((f, getattr(self, f)) for f, _ in self._fields_ if f != "dummy")
         return data
