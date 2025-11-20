@@ -107,9 +107,10 @@ class FocasDriver(object):
     def get_cnc_state(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
-        fanuc = fwlib.cnc_statinfo
+
+        fanuc = fwlib.cnc_sysinfo_ex
+        fanuc.restype = c_short
         state_info = ODBST()
-        fanuc.restype - c_short
         result = fanuc(handle,byref(state_info))
         data.update(state_info.__dict__)
         end_time = time.perf_counter()
