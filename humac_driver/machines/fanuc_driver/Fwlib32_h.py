@@ -522,6 +522,9 @@ class ODBSYS(ctypes.Structure):
         return data
     
 class ODBST(ctypes.Structure):
+    """
+    Reads the status information of CNC. The various information is stored in each member of "ODBST".
+    """
     _pack_ = 4
     _fields_ =[
                 ('dummy',ctypes.c_short*2),
@@ -537,8 +540,85 @@ class ODBST(ctypes.Structure):
                 ('alarm',ctypes.c_short),
                 ('warning',ctypes.c_short),
                 ('battery',ctypes.c_short)]
+    # Define mappings for each field's values
+    _status_mappings = {
+        'aut': {
+            0: "No selection",
+            1: "MDI",
+            2: "TAPE/DNC",
+            3: "MEMory",
+            4: "EDIT",
+            5: "TeacH IN",
+        },
+        'manual': {
+            0: "No selection",
+            1: "REFerence",
+            2: "INC·feed",
+            3: "HaNDle",
+            4: "JOG",
+            5: "AnGular Jog",
+            6: "Inc+Handl",
+            7: "Jog+Handl",
+        },
+        'run': {
+            0: "STOP",
+            1: "HOLD",
+            2: "STaRT",
+            3: "MSTR",
+            4: "ReSTaRt (not blinking)",
+            5: "PRSR",
+            6: "NSRC",
+            7: "ReSTaRt (blinking)",
+            8: "ReSET",
+            13: "HPCC",
+        },
+        'edit': {
+            0: "Not editing",
+            1: "EDIT",
+            2: "SeaRCH",
+            3: "VeRiFY",
+            4: "CONDense",
+            5: "READ",
+            6: "PuNCH",
+        },
+        'motion': {
+            0: "No motion",
+            1: "MoTioN",
+            2: "DWeLl",
+            3: "Wait",
+        },
+        'mstb': {
+            0: "No MSTB",
+            1: "FIN",
+        },
+        'emergency': {
+            0: "Not emergency",
+            1: "EMerGency",
+        },
+        'write': {
+            0: "Not writing",
+            1: "Writing",
+        },
+        'labelskip': {
+            0: "Label SKip",
+            1: "Not label skip",
+        },
+        'alarm': {
+            0: "No alarm",
+            1: "ALarM",
+        },
+        'warning': {
+            0: "No warning",
+            1: "WaRNing",
+        },
+        'battery': {
+            0: "Normal",
+            1: "BATtery low (memory)",
+            2: "BATtery low (position detector)",
+        },
+    }
     
     @property
     def __dict__(self):
-        data = dict((f, getattr(self, f)) for f, _ in self._fields_ if f != "dummy")
+        data = dict((f, self._status_mappings.get(f).get(getattr(self, f))) for f, _ in self._fields_ if f != "dummy")
         return data
