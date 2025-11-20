@@ -103,6 +103,18 @@ class FocasDriver(object):
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
+    
+    def get_cnc_state(self,handle):
+        data = {"ts": time.time_ns() // 1_000_000}
+        start_time= time.perf_counter()
+        fanuc = fwlib.cnc_statinfo
+        state_info = ODBST()
+        fanuc.restype - c_short
+        result = fanuc(handle,byref(state_info))
+        data.update(state_info.__dict__)
+        end_time = time.perf_counter()
+        data['time'] = end_time-start_time
+        return data
 
     def getProgramName(self, handle):
         data = {"ts":time.time_ns() // 1_000_000 }
@@ -162,6 +174,7 @@ class FocasDriver(object):
             # self.getBlockNumber,
             # self.getActiveTool,
             self.get_cnc_sysinfo,
+            self.get_cnc_state
         ]
     
     def _run_function(self, func):

@@ -521,3 +521,25 @@ class ODBSYS(ctypes.Structure):
         data = dict((f, getattr(self, f)) for f, _ in self._fields_)
         CNC.MAX_AXIS = self.max_axis
         return data
+    
+class ODBST(ctypes.Structure):
+    _pack_=4
+    _fields_ =[
+                ('dummy',ctypes.c_short*2),
+                ('aut',ctypes.c_short),
+                ('manual',ctypes.c_short),
+                ('run',ctypes.c_short),
+                ('edit',ctypes.c_short),
+                ('motion',ctypes.c_short),
+                ('mstb',ctypes.c_short),
+                ('emergency',ctypes.c_short),
+                ('write',ctypes.c_short),
+                ('labelskip',ctypes.c_short),
+                ('alarm',ctypes.c_short),
+                ('warning',ctypes.c_short),
+                ('battery',ctypes.c_short)]
+    
+    @property
+    def __dict__(self):
+        data = dict((f, getattr(self, f)) for f, _ in self._fields_)
+        return data
