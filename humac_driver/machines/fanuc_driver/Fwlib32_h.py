@@ -17,15 +17,15 @@ For example, for documentation on "AlarmStatus", look up "ODBALM".
 """
 
 import ctypes
-
 class CNC_CONF:
     """Constants"""
     MAX_AXIS = 32
     """int: The maximum number of axes a control will return"""
     ALL_AXES = -1
     """int: A constant value to request that a function return all axes at once"""
-    MAX_PATH = None
+    MAX_PATH = 5
     CURRENT_PATH = None
+
 CNC = CNC_CONF()
 
 DATAIO_ALARM_MASK = (0x1 << 2) | (0x1 << 7)
