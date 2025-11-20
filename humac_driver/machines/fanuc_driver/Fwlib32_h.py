@@ -542,81 +542,105 @@ class ODBST(ctypes.Structure):
                 ('battery',ctypes.c_short)]
     # Define mappings for each field's values
     _status_mappings = {
-        'aut': {
-            0: "No selection",
-            1: "MDI",
-            2: "TAPE/DNC",
-            3: "MEMory",
-            4: "EDIT",
-            5: "TeacH IN",
-        },
-        'manual': {
-            0: "No selection",
-            1: "REFerence",
-            2: "INC·feed",
-            3: "HaNDle",
-            4: "JOG",
-            5: "AnGular Jog",
-            6: "Inc+Handl",
-            7: "Jog+Handl",
-        },
-        'run': {
-            0: "STOP",
-            1: "HOLD",
-            2: "STaRT",
-            3: "MSTR",
-            4: "ReSTaRt (not blinking)",
-            5: "PRSR",
-            6: "NSRC",
-            7: "ReSTaRt (blinking)",
-            8: "ReSET",
-            13: "HPCC",
-        },
-        'edit': {
-            0: "Not editing",
-            1: "EDIT",
-            2: "SeaRCH",
-            3: "VeRiFY",
-            4: "CONDense",
-            5: "READ",
-            6: "PuNCH",
-        },
-        'motion': {
-            0: "No motion",
-            1: "MoTioN",
-            2: "DWeLl",
-            3: "Wait",
-        },
-        'mstb': {
-            0: "No MSTB",
-            1: "FIN",
-        },
-        'emergency': {
-            0: "Not emergency",
-            1: "EMerGency",
-        },
-        'write': {
-            0: "Not writing",
-            1: "Writing",
-        },
-        'labelskip': {
-            0: "Label SKip",
-            1: "Not label skip",
-        },
-        'alarm': {
-            0: "No alarm",
-            1: "ALarM",
-        },
-        'warning': {
-            0: "No warning",
-            1: "WaRNing",
-        },
-        'battery': {
-            0: "Normal",
-            1: "BATtery low (memory)",
-            2: "BATtery low (position detector)",
-        },
+        'aut': {0: "No selection",1: "MDI",2: "TAPE/DNC",3: "MEMory",4: "EDIT",5: "TeacH IN",},
+        'manual': {0: "No selection",1: "REFerence",2: "INC·feed",3: "HaNDle",4: "JOG",
+                   5: "AnGular Jog",6: "Inc+Handl",7: "Jog+Handl",},
+        'run': {0: "STOP",1: "HOLD",2: "STaRT",3: "MSTR",4: "ReSTaRt (not blinking)",5: "PRSR",
+                6: "NSRC",7: "ReSTaRt (blinking)",8: "ReSET",13: "HPCC",},
+        'edit': {0: "Not editing",1: "EDIT",2: "SeaRCH",3: "VeRiFY",4: "CONDense",5: "READ",6: "PuNCH",},
+        'motion': {0: "No motion",1: "MoTioN",2: "DWeLl",3: "Wait",},
+        'mstb': { 0: "No MSTB", 1: "FIN", },
+        'emergency': { 0: "Not emergency", 1: "EMerGency",},
+        'write': { 0: "Not writing", 1: "Writing",},
+        'labelskip': {0: "Label SKip", 1: "Not label skip",},
+        'alarm': { 0: "No alarm", 1: "ALarM",},
+        'warning': { 0: "No warning", 1: "WaRNing",},
+        'battery': { 0: "Normal", 1: "BATtery low (memory)", 2: "BATtery low (position detector)",},
     }
+    
+    @property
+    def __dict__(self):
+        data = dict((f, self._status_mappings.get(f).get(getattr(self, f))) for f, _ in self._fields_ if f != "dummy")
+        return data
+    
+class ODBST2(ctypes.Structure):
+    _pack_ =4
+    _fields_=[
+        ('hdck',ctypes.c_short),
+        ('tmmode',ctypes.c_short),
+        ('aut',ctypes.c_short),
+        ('run',ctypes.c_short),
+        ('motion',ctypes.c_short),
+        ('mstb',ctypes.c_short),
+        ('emergency',ctypes.c_short),
+        ('alarm',ctypes.c_short),
+        ('edit',ctypes.c_short)
+        ('warning',ctypes.c_short),
+        ('o3dchk',ctypes.c_short),
+        ('ext_opt',ctypes.c_short),
+        ('restart',ctypes.c_short)]
+    
+    _status_mappings = {
+        'hdck': {
+            0: "Invalid of manual handle re-trace",
+            1: "M.H.RTR.(Manual handle re-trace)",
+            2: "NO RVRS.(Backward movement prohibition)",
+            3: "NO CHAG.(Direction change prohibition)"},
+        'tmmode':{0:"T mode",1:"M mode"},
+        'aut':{0:"MDI",1:"MEMory",2:"****",3:"EDIT",4:"HaNDle",5:"JOG",6:"Teach in JOG",
+               7:"Teach in HaNDle",8:"INC·feed",9:"REFerence",10:"ReMoTe",},
+        'run':{0:'****(reset)',1:'STOP',2:'HOLD',3:'STaRT',4:'MSTR'},
+        'motion':{0:'***',1:'MoTioN',2:'DWeLl'},
+        'mstb':{0:'***(Others)',1:'FIN'},
+        'emergency':{0:"Not emergency",1:"EMerGency",2:"ReSET",3:"WAIT(FS35i only)"},
+        'alarm':{0:'***(Others)',1:'ALarM',2:'BATtery low',3:'FAN(NC or Servo amplifier)',4:'PS Warning',
+            5:'FSsB warning',6:'LeaKaGe warning',7:'ENCoder warning',8:'PMC alarm'},
+        'edit':{           
+            0:	'****(Not editing)',
+            1:	'EDIT(during editing)',
+            2:	'SeaRCH(during searching)',
+            3:	'OUTPUT(during output)',
+            4:	'INPUT(during input)',
+            5:	'COMPARE((during comparing)',
+            6:	'Label SKip(label skip status)(30i, 0i-D/F are unused.)',
+            7:	'ReSTaRt(during program restart)',
+            9:	'PTRR(during tool retraction and recovery mode)',
+            10:	'RVRS(during retracing)',
+            11:	'RTRY(during reprogressing)',
+            12:	'RVED(end of retracing)',
+            13:	'HANDLE(during handle overlapping)(30i, 0i-D/F are unused.)',
+            14:	'OFfSeT(during tool length measurement mode)',
+            15:	'Work OFfSet(during work zero point measurement mode)',
+            16:	'AICC(during AI coutour control)(30i, 0i-F)(0i-D:No.13104#0=1)',
+            17:	'MEmory-CHecK(checking tape memory)(30i, 0i-D/F are unused.)',
+            18:	"CusToMers BoarD(during customers board control)(30i, 0i-D/F are unused.)",
+            19:	'SAVE(saving fine torque sensing data)(30i, 0i-D/F are unused.)',
+            20:	'AI NANO(during AI nano contour control)(30i, 0i-D/F are unused.)',
+            21:	'AI APC(during AI advanced preview control)(0i-D:No.13104#0=1)',
+            23:	'AICC 2(during AI coutour control II)(30i, 0i-F)(0i-D:No.13104#0=1)',
+            26:	'LEN(change the manual active offset value:length offset change mode)',
+            27:	'RAD(change the manual active offset value:radius offset change mode)',
+            28:	'WZR(change the manual active offset value:workpiece origin offset change mode)',
+            39:	'TCP(during tool center point control of 5-axes machining)',
+            40:	'TWP(during tilted working plane command)',
+            41:	'TCP+TWP(during tool center point control of 5-axes machining and tilted working plane command)',
+            42:	'APC(Advanced Preview Control)(0i-D:No.13104#0=1)',
+            43:	'PRG-CHK(High speed program check)',
+            44: 'APC(Advanced Preview Control)(0i-D:No.13104#0=0)',
+            45: 'S-TCP(during smooth TCP)(30i, 0i-F)',
+            46: 'AICC 2(during AI coutour control II)(0i-D:No.13104#0=0)',
+            59: 'ALLSAVE(High speed program management:the programs saving in progress)',
+            60: 'NOTSAVE(High speed program management:by the programs not saved status)',},
+        "warning":{0:'(No warning)',1:'WaRNing(Start from middle of program)'},
+        'o3dchk':{
+            0	:	'Not 3D interference mode',
+            1	:	'3D interference mode by Built-in 3D interference check',
+            2	:	'3D interference mode by presonal computer function'},
+        'ext_opt':{0:'Normal',2:'Temporary setting mode',3:'Waiting of certification',},
+        'restart':{       
+            0	:	'It is either of the following status.- Program did not edit.- Parameter No.10330- CNC does not support this function.',
+            1	:	'is edited.'}
+            }
     
     @property
     def __dict__(self):

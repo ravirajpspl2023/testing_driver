@@ -113,6 +113,13 @@ class FocasDriver(object):
         state_info = ODBST()
         result = fanuc(handle,byref(state_info))
         data.update(state_info.__dict__)
+
+        fanuc = fwlib.cnc_statinfo2
+        fanuc.restype = c_short
+        new_info = ODBST2()
+        result = fanuc(handle,byref(new_info))
+        data['new_info'] = new_info.__dict__
+        
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
