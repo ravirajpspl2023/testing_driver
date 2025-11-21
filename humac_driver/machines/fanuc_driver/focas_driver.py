@@ -123,64 +123,9 @@ class FocasDriver(object):
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
-
-    def getProgramName(self, handle):
-        data = {"ts":time.time_ns() // 1_000_000 }
-        start_time= time.perf_counter()
-        func = fwlib.cnc_exeprgname
-        func.restype = c_short
-        executingProgram = ExecutingProgram()
-        result = func(handle, byref(executingProgram))
-        logging.info(f"result of program {result}")
-        # FocasExceptionRaiser(result, context=self)
-        data["programName"] = executingProgram.name
-        data["oNumber"] = executingProgram.oNumber
-        end_time = time.perf_counter()
-        data['time'] = end_time-start_time
-        return data
-
-    def getBlockNumber(self, handle):
-        data = {"ts":time.time_ns() // 1_000_000 }
-        start_time= time.perf_counter()
-        dynamic = DynamicResult()
-        func = fwlib.cnc_rddynamic2
-        func.restype = c_short
-        result = func(handle,
-                      -1,
-                      sizeof(DynamicResult),
-                      byref(dynamic))
-        logging.info(f"result of blockNumber {result}")
-        # FocasExceptionRaiser(result, context=self)
-        data["blockNumber"] = dynamic.sequenceNumber
-        data['axis'] = dynamic.axis
-        data['alarm'] = dynamic.alarm
-        data['programNumber'] = dynamic.programNumber
-        data['actualFeed'] = dynamic.actualFeed
-        data['actualSpindleSpeed'] = dynamic.actualSpindleSpeed
-        data['position'] = dynamic.position
-        end_time = time.perf_counter()
-        data['time'] = end_time-start_time
-        return data
-
-    def getActiveTool(self, handle):
-        data = {"ts":time.time_ns() // 1_000_000 }
-        start_time= time.perf_counter()
-        func = fwlib.cnc_modal
-        func.restype = c_short
-        modalData = ModalData()
-        result = func(handle, 108, 1, byref(modalData))
-        logging.info(f"result of active tool {result}")
-        # FocasExceptionRaiser(result, context=self)
-        data["activeTool"] = modalData.modal.aux.aux_data
-        end_time = time.perf_counter()
-        data['time'] = end_time-start_time
-        return data
            
     def _get_poll_methods(self):
         return [
-            # self.getProgramName,
-            # self.getBlockNumber,
-            # self.getActiveTool,
             self.get_cnc_sysinfo,
             self.get_cnc_state,
         ]
