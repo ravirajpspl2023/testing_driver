@@ -646,3 +646,15 @@ class ODBST2(ctypes.Structure):
     def __dict__(self):
         data = dict((f, self._status_mappings.get(f).get(getattr(self, f))) for f, _ in self._fields_ if f != "dummy")
         return data
+    
+class ODBLOAD(ctypes.Structure):
+    _pack_ = 4
+    _fields_=[
+        ('datano',ctypes.c_short),   # /* Motor type. */
+        ('type',ctypes.c_short),     # /* Axis number. */
+        ('data',ctypes.c_short*32)]  # /* Abnormal load torque data. */   N is the maximum number of controlled axes. 
+    
+    @property
+    def __dict__(self):
+        data = dict((f, getattr(self, f)) for f, _ in self._fields_)
+        return data

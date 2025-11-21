@@ -123,11 +123,25 @@ class FocasDriver(object):
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
+    
+    def get_torque_motors(self,handle):
+        data = {"ts": time.time_ns() // 1_000_000}
+        start_time= time.perf_counter()
+        length = 4 + 2 * 32
+        fanuc = fwlib.cnc_loadtorq
+        fanuc.restype = c_short
+        motor_torque = ODBLOAD()
+        result = fanuc(handle,0,CNC.ALL_AXES,length,byref(motor_torque))
+        data.update(motor_torque.__dict__)
+        end_time = time.perf_counter()
+        data['time'] = end_time-start_time
+        return data
            
     def _get_poll_methods(self):
         return [
             self.get_cnc_sysinfo,
             self.get_cnc_state,
+            self.get_torque_motors,
         ]
     
     def _run_function(self, func):
