@@ -127,16 +127,16 @@ class FocasDriver(object):
     def get_torque_motors(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
-        length = 4 + 2 * 32
+        length = 4 + 2 * CNC.MAX_AXIS
         fanuc = fwlib.cnc_loadtorq
         fanuc.restype = c_short
         motor_torque = ODBLOAD()
         result = fanuc(handle,0,CNC.ALL_AXES,length,byref(motor_torque))
         data.update(motor_torque.__dict__)
-        if data.get('data'):
-            for i in range(CNC.MAX_AXIS):
-                raw = motor_torque.data[i]
-                logging.info(f"motor_{i}_torque: {raw}")
+        # if data.get('data'):
+        #     for i in range(CNC.MAX_AXIS):
+        #         raw = motor_torque.data[i]
+        #         logging.info(f"motor_{i}_torque: {raw}")
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
