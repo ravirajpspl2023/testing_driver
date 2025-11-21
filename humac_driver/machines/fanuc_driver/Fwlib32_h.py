@@ -658,9 +658,7 @@ class ODBLOAD(ctypes.Structure):
     def __dict__(self):
         torque = dict((f, getattr(self, f)) for f, _ in self._fields_ if f != "data")
         torque['torque'] = []
-        if self.data:
-            for i in self.data:
-                print(i)
+        print(f"getting data: {self.data}")
         # if self.data :
         #     for i in self.data:
         #         torque['torque'].append(self.data[i])
