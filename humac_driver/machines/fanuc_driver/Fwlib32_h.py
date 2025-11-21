@@ -652,13 +652,13 @@ class ODBLOAD(ctypes.Structure):
     _fields_=[
         ('datano',ctypes.c_short),   # /* Motor type. */
         ('type',ctypes.c_short),     # /* Axis number. */
-        ('data',ctypes.c_short*CNC.MAX_AXIS)]  # /* Abnormal load torque data. */   N is the maximum number of controlled axes. 
+        ('data',ctypes.c_short* CNC.MAX_AXIS)]  # /* Abnormal load torque data. */   N is the maximum number of controlled axes. 
     
     @property
     def __dict__(self):
         torque = dict((f, getattr(self, f)) for f, _ in self._fields_ if f != "data")
         torque['torque'] = []
-        if self.data :
-            for i in self.data:
-                torque['torque'].append(self.data[i])
+        # if self.data :
+        #     for i in self.data:
+        #         torque['torque'].append(self.data[i])
         return torque
