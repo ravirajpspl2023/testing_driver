@@ -132,7 +132,11 @@ class FocasDriver(object):
         fanuc.restype = c_short
         motor_torque = ODBLOAD()
         result = fanuc(handle,0,CNC.ALL_AXES,length,byref(motor_torque))
-        data.update(motor_torque.__dict__)
+        data.update({'axis':motor_torque.__dict__})
+
+        result = fanuc(handle,1,CNC.ALL_AXES,length,byref(motor_torque))
+        data.update({'spindle':motor_torque.__dict__})
+
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
