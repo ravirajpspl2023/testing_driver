@@ -140,12 +140,25 @@ class FocasDriver(object):
         end_time = time.perf_counter()
         data['time'] = end_time-start_time
         return data
+    
+    def get_gcode_program(self,handle):
+        data = {"ts": time.time_ns() // 1_000_000}
+        start_time= time.perf_counter()
+        fanuc = fwlib.cnc_rdblkcount
+        fanuc.restype = c_short
+        block_count = c_long()
+        result = fanuc(handle,byref(block_count))
+        end_time = time.perf_counter()
+        data.update({'block_count':block_count.value})
+        data['time'] = end_time-start_time
+        return data
            
     def _get_poll_methods(self):
         return [
             self.get_cnc_sysinfo,
             self.get_cnc_state,
             self.get_torque_servo,
+            self.get_gcode_program
         ]
     
     def _run_function(self, func):
