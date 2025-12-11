@@ -53,6 +53,7 @@ class GcodeThread(threading.Thread):
         fanuc.restype = c_short
         block_count = c_long()
         result = fanuc(handle,byref(block_count))
+        logging.info(f"Gcode Block Count Fetch Result: {result} | handle : {handle}")
         end_time = time.perf_counter()
         data.update({'block_count':block_count.value})
         data['time'] = end_time-start_time
