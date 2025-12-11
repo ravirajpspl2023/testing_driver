@@ -45,6 +45,8 @@ class GcodeThread(threading.Thread):
         self.lock = threading.Lock()
         self.handle = handle
         self._stop_event = threading.Event()
+        self.start()
+
 
     def get_gcode_program(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
@@ -65,7 +67,6 @@ class GcodeThread(threading.Thread):
                 gcode_data = self.get_gcode_program(self.handle)
                 with self.lock:
                     self.GcodeProgram.put(gcode_data)
-            time.sleep(0.01)  # Polling interval
 
     def stop(self):
         self._stop_event.set()
