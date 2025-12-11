@@ -1,5 +1,4 @@
 import sys
-import os
 import ctypes
 from ctypes.util import find_library
 from ctypes import *
@@ -9,11 +8,11 @@ from functools import partial
 from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
+from humac_driver.machines.fanuc_driver.gcode_thread import GcodeThread
+from multiprocessing import Queue
 import logging
 from humac_driver.const import *
-
 from concurrent.futures import ThreadPoolExecutor
-
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 extradlls=[]
@@ -45,7 +44,9 @@ class FocasDriver(object):
     def __init__(self,ip,port,timeout=10):
         self.ip = ip
         self.port = port
-        self.timeout = timeout   
+        self.timeout = timeout
+        self.GcodeProgram = Queue(maxsize=1024000)
+        self.gcode_thread = GcodeThread(self.GcodeProgram)  
     
     def connect(self,):
         start_time = time.time()
@@ -74,8 +75,8 @@ class FocasDriver(object):
            # FocasExceptionRaiser(result, context=self) 
             elapsed = time.time() - start_time
             logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
-            return handle.value
-        return None
+            self.gcode_thread.handle = handle.value
+        return handle.value
     
     def get_cnc_sysinfo(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
@@ -142,15 +143,20 @@ class FocasDriver(object):
         return data
     
     def get_gcode_program(self,handle):
-        data = {"ts": time.time_ns() // 1_000_000}
-        start_time= time.perf_counter()
-        fanuc = fwlib.cnc_rdblkcount
-        fanuc.restype = c_short
-        block_count = c_long()
-        result = fanuc(handle,byref(block_count))
-        end_time = time.perf_counter()
-        data.update({'block_count':block_count.value})
-        data['time'] = end_time-start_time
+        # data = {"ts": time.time_ns() // 1_000_000}
+        # start_time= time.perf_counter()
+        # fanuc = fwlib.cnc_rdblkcount
+        # fanuc.restype = c_short
+        # block_count = c_long()
+        # result = fanuc(handle,byref(block_count))
+        # end_time = time.perf_counter()
+        # data.update({'block_count':block_count.value})
+        # data['time'] = end_time-start_time
+        data = []
+        with self.gcode_thread.lock:
+            for _ in range(self.GcodeProgram.qsize()):
+                data.append(self.GcodeProgram.get())
+                
         return data
            
     def _get_poll_methods(self):
@@ -187,6 +193,7 @@ class FocasDriver(object):
     
     def disconnect(self, handle):
         fwlib.cnc_freelibhndl(handle)
+        self.gcode_thread.stop()
             
 
     # def student_info(self, id):

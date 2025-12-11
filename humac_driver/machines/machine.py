@@ -28,9 +28,9 @@ class Machine(mp.Process):
         self.driver = FocasDriver(self.ip,self.port,self.timeout)
         try:
             handle = self.driver.connect()
-            while True:
-                result = self.driver.poll(handle)
-                logging.info(result)
+            # while True:
+            result = self.driver.poll(handle)
+            logging.info(result)
         except Exception as e:
             logging.info(f"[PID {pid}] Connection failed {self.edgeid}: {e}")
 
