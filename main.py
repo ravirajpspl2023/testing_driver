@@ -13,10 +13,14 @@ if __name__ == "__main__":
             # {'ip':"193.168.0.4", "port":1883,"timeout":8,"edgid" :"ed4200003"}
         ]
     }
-    driver = HumacDriver(config=config)
-    if driver.machines:
-        for m in driver.machines:
-             m.join()
-    end_time = time.perf_counter()
-    logging.info(f'time requird for complition is : {end_time-start_time}s')
+    try:
+        driver = HumacDriver(config=config)
+        if driver.machines:
+            for m in driver.machines:
+                m.join()
+        end_time = time.perf_counter()
+        logging.info(f'time requird for complition is : {end_time-start_time}s')
+    except KeyboardInterrupt or Exception as e:
+        logging.info(f"Main process interrupted: {e}")
+        driver.stop_all_machines()
     

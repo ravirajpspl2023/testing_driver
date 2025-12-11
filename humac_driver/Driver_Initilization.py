@@ -25,4 +25,8 @@ class HumacDriver(object):
         if self.machines:
             for m in self.machines:
                 m.join()
-
+    
+    def stop_all_machines(self,):
+        if self.machines:
+            for m in self.machines:
+                m.terminate()
