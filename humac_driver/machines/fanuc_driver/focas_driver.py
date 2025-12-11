@@ -166,10 +166,12 @@ class FocasDriver(object):
         return func()
     
     def poll(self, handle) -> Dict[str, Any]:
-
             results = {}
+            start_time= time.perf_counter()
             for method in self._get_poll_methods():
                 results[method.__name__] = method(handle)
+                
+            results['poll_time'] = time.perf_counter() - start_time
             return results
     
             # methods = self._get_poll_methods()
