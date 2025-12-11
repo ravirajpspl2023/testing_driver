@@ -193,10 +193,9 @@ class FocasDriver(object):
 
     
     def disconnect(self,):
-        self.gcode_thread.join()
+        self.gcode_thread.stop()
         if self.handle != -16 or self.handle is None:
             fwlib.cnc_freelibhndl(self.handle)
-        self.gcode_thread.stop()
             
 
     # def student_info(self, id):
