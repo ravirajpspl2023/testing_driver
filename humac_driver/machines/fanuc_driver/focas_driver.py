@@ -8,7 +8,6 @@ from functools import partial
 from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
-from humac_driver.machines.fanuc_driver.gcode_thread import GcodeThread
 from multiprocessing import Queue
 import logging
 from humac_driver.const import *
@@ -45,8 +44,6 @@ class FocasDriver(object):
         self.ip = ip
         self.port = port
         self.timeout = timeout
-        self.GcodeProgram = Queue(maxsize=1024000)
-        self.gcode_thread = GcodeThread(self.GcodeProgram) 
         self.handle = None 
     
     def connect(self,):
@@ -144,19 +141,15 @@ class FocasDriver(object):
         return data
     
     def get_gcode_program(self,handle):
-        # data = {"ts": time.time_ns() // 1_000_000}
-        # start_time= time.perf_counter()
-        # fanuc = fwlib.cnc_rdblkcount
-        # fanuc.restype = c_short
-        # block_count = c_long()
-        # result = fanuc(handle,byref(block_count))
-        # end_time = time.perf_counter()
-        # data.update({'block_count':block_count.value})
-        # data['time'] = end_time-start_time
-        data = []
-        with self.gcode_thread.lock:
-            for _ in range(self.GcodeProgram.qsize()):
-                data.append(self.GcodeProgram.get())
+        data = {"ts": time.time_ns() // 1_000_000}
+        start_time= time.perf_counter()
+        fanuc = fwlib.cnc_rdblkcount
+        fanuc.restype = c_short
+        block_count = c_long()
+        result = fanuc(handle,byref(block_count))
+        end_time = time.perf_counter()
+        data.update({'block_count':block_count.value})
+        data['time'] = end_time-start_time
 
         return data
            
@@ -193,7 +186,6 @@ class FocasDriver(object):
 
     
     def disconnect(self,):
-        self.gcode_thread.stop()
         if self.handle != -16 or self.handle is None:
             fwlib.cnc_freelibhndl(self.handle)
             
