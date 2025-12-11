@@ -33,9 +33,11 @@ class Machine(mp.Process):
             logging.info(result)
         except Exception as e:
             logging.info(f"[PID {pid}] Connection failed {self.edgeid}: {e}")
+        self.driver.disconnect()
 
     def terminate(self) -> None:
         logging.info(f"Terminating machine {self.edgeid}")
+        self.driver.disconnect()
         super().terminate()
     
 

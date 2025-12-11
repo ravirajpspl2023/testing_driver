@@ -46,7 +46,8 @@ class FocasDriver(object):
         self.port = port
         self.timeout = timeout
         self.GcodeProgram = Queue(maxsize=1024000)
-        self.gcode_thread = GcodeThread(self.GcodeProgram)  
+        self.gcode_thread = GcodeThread(self.GcodeProgram) 
+        self.handle = None 
     
     def connect(self,):
         start_time = time.time()
@@ -156,7 +157,7 @@ class FocasDriver(object):
         with self.gcode_thread.lock:
             for _ in range(self.GcodeProgram.qsize()):
                 data.append(self.GcodeProgram.get())
-                
+
         return data
            
     def _get_poll_methods(self):
@@ -191,8 +192,10 @@ class FocasDriver(object):
             # return dict(zip(method_names, results))
 
     
-    def disconnect(self, handle):
-        fwlib.cnc_freelibhndl(handle)
+    def disconnect(self,):
+        self.gcode_thread.join()
+        if self.handle != -16 or self.handle is None:
+            fwlib.cnc_freelibhndl(self.handle)
         self.gcode_thread.stop()
             
 
