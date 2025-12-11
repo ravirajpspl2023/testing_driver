@@ -73,7 +73,6 @@ class FocasDriver(object):
            # FocasExceptionRaiser(result, context=self) 
             elapsed = time.time() - start_time
             logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
-            self.gcode_thread.handle = handle.value
         return handle.value
     
     def get_cnc_sysinfo(self,handle):
