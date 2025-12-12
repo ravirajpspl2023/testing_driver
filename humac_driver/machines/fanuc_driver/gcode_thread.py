@@ -99,6 +99,7 @@ class GcodeThread(threading.Thread):
                     gcode_data['time'] = time.perf_counter()-start_time
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
+                    gcode_data['program_No'] = self.prog_no.value
                     self.previous_block = self.blk_no.value
                     logging.info(f"Gcode update: {gcode_data}")
 
