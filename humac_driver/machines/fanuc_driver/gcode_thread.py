@@ -39,15 +39,15 @@ if sys.platform == 'linux':
         fwlib= None
 
 class GcodeThread(threading.Thread):
-    def __init__(self, GcodeProgram : mp.Queue, ip,port,timeout=10):
+    def __init__(self,  ip,port,timeout=10):
         super().__init__()
-        self.GcodeProgram = GcodeProgram
         self.ip = ip
         self.port = port
         self.timeout = timeout
-        self.lock = threading.Lock()
         self.handle = None
         self._stop_event = threading.Event()
+        self.previous_block = -1
+        self.current_bloack = c_long()
         self.start()
 
     def connect(self,):
@@ -79,16 +79,14 @@ class GcodeThread(threading.Thread):
             logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
         return handle.value
 
-    def get_gcode_program(self,handle):
+    def get_gcode_program(self):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
         fanuc = fwlib.cnc_rdblkcount
         fanuc.restype = c_short
-        block_count = c_long()
-        result = fanuc(handle,byref(block_count))
-        logging.info(f"Gcode Block Count Fetch Result: {result} | handle : {handle}")
+        result = fanuc(self.handle,byref(self.current_bloack))
+        data['block_count'] = self.current_bloack.value
         end_time = time.perf_counter()
-        data.update({'block_count':block_count.value})
         data['time'] = end_time-start_time
         return data
 
@@ -96,9 +94,10 @@ class GcodeThread(threading.Thread):
         self.handle = self.connect()
         while not self._stop_event.is_set():
             if self.handle:
-                gcode_data = self.get_gcode_program(self.handle)
-                with self.lock:
-                    self.GcodeProgram.put(gcode_data)
+                gcode_data = self.get_gcode_program()
+                if self.previous_block != self.current_bloack.value:
+                    self.previous_block = self.current_bloack.value
+                    logging.info(f"Gcode update: {gcode_data}")
 
     def stop(self):
         if self.handle != -16 or self.handle is not None:

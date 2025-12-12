@@ -46,8 +46,7 @@ class FocasDriver(object):
         self.port = port
         self.timeout = timeout
         self.handle = None
-        self.GcodeProgram = Queue(maxsize=1024000)
-        self.gcode_thread = GcodeThread(self.GcodeProgram, ip, port, timeout) 
+        self.gcode_thread = GcodeThread(ip, port, timeout) 
     
     def connect(self,):
         start_time = time.time()
@@ -165,7 +164,7 @@ class FocasDriver(object):
             # self.get_cnc_sysinfo,
             self.get_cnc_state,
             self.get_torque_servo,
-            self.get_gcode_program
+            # self.get_gcode_program
         ]
     
     def _run_function(self, func):
