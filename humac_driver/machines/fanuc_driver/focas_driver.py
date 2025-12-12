@@ -153,17 +153,18 @@ class FocasDriver(object):
         # data.update({'block_count':block_count.value})
         # data['time'] = end_time-start_time
         data = []
-        with self.gcode_thread.lock:
-            for _ in range(self.GcodeProgram.qsize()):
-                data.append(self.GcodeProgram.get())
+        if not self.GcodeProgram.empty():
+            with self.gcode_thread.lock:
+                for _ in range(self.GcodeProgram.qsize()):
+                    data.append(self.GcodeProgram.get())
 
         return data
            
     def _get_poll_methods(self):
         return [
             # self.get_cnc_sysinfo,
-            # self.get_cnc_state,
-            # self.get_torque_servo,
+            self.get_cnc_state,
+            self.get_torque_servo,
             self.get_gcode_program
         ]
     
