@@ -194,47 +194,7 @@ class FocasDriver(object):
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
             fwlib.cnc_freelibhndl(self.handle)
-            
-
-    # def student_info(self, id):
-    #     start_time = time.perf_counter()
-    #     time.sleep(1)
-    #     end_time = time.perf_counter()
-
-    #     return {"time": end_time-start_time}
-
-    # def student_performance(self, id):
-    #     start_time= time.perf_counter()
-    #     time.sleep(2)
-    #     end_time = time.perf_counter()
-    #     return {'time': end_time-start_time}
-
-    # def student_background_details(self, id):
-    #     start_time= time.perf_counter()
-    #     time.sleep(3)
-    #     end_time = time.perf_counter()
-    #     return {'time': end_time-start_time}
-
-    # def _get_poll_methods(self):
-    #     return [
-    #         self.student_info,
-    #         self.student_performance,
-    #         self.student_background_details
-    #     ]
-
-    # def _run_function(self, func):
-    #     """Helper function jo pickle ho sakta hai"""
-    #     return func()
-
-    # def poll(self, id) -> Dict[str, Any]:
-    #     methods = self._get_poll_methods()
-    #     method_names = [m.__name__ for m in methods]
-    #     partial_funcs = [partial(method, id) for method in methods]
-
-    #     with mp.Pool(processes=len(methods)) as pool:
-    #         results = pool.map(self._run_function, partial_funcs)
-
-    #     return dict(zip(method_names, results))
+        self.gcode_thread.stop()
         
 
 

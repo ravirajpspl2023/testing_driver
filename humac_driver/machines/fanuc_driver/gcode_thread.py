@@ -101,4 +101,6 @@ class GcodeThread(threading.Thread):
                     self.GcodeProgram.put(gcode_data)
 
     def stop(self):
+        if self.handle != -16 or self.handle is not None:
+            fwlib.cnc_freelibhndl(self.handle)
         self._stop_event.set()
