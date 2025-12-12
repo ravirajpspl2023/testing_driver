@@ -2,17 +2,14 @@ import sys
 import ctypes
 from ctypes.util import find_library
 from ctypes import *
-import multiprocessing as mp
 import time 
 from functools import partial
 from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
 from humac_driver.machines.fanuc_driver.gcode_thread import GcodeThread
-from multiprocessing import Queue
 import logging
 from humac_driver.const import *
-from concurrent.futures import ThreadPoolExecutor
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 extradlls=[]
@@ -152,10 +149,10 @@ class FocasDriver(object):
         # data.update({'block_count':block_count.value})
         # data['time'] = end_time-start_time
         data = []
-        if not self.GcodeProgram.empty():
-            with self.gcode_thread.lock:
-                for _ in range(self.GcodeProgram.qsize()):
-                    data.append(self.GcodeProgram.get())
+        # if not self.GcodeProgram.empty():
+        #     with self.gcode_thread.lock:
+        #         for _ in range(self.GcodeProgram.qsize()):
+        #             data.append(self.GcodeProgram.get())
 
         return data
            
@@ -163,7 +160,7 @@ class FocasDriver(object):
         return [
             # self.get_cnc_sysinfo,
             self.get_cnc_state,
-            self.get_torque_servo,
+            # self.get_torque_servo,
             # self.get_gcode_program
         ]
     

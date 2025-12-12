@@ -25,7 +25,7 @@ class CNC_CONF:
     """int: A constant value to request that a function return all axes at once"""
     MAX_PATH = 5
     CURRENT_PATH = None
-
+    
 CNC = CNC_CONF()
 
 DATAIO_ALARM_MASK = (0x1 << 2) | (0x1 << 7)
