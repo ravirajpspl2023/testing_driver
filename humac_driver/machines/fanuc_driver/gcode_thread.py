@@ -80,22 +80,21 @@ class GcodeThread(threading.Thread):
         return handle.value
 
     def get_gcode_program(self):
-        data = {}
         fanuc = fwlib.cnc_rdblkcount
         fanuc.restype = c_short
         result = fanuc(self.handle,byref(self.current_bloack))
-        return data
 
     def run(self):
         self.handle = self.connect()
+        start_time = time.perf_counter()
         while not self._stop_event.is_set():
             if self.handle:
-                start_time= time.perf_counter()
-                gcode_data = self.get_gcode_program()
+                self.get_gcode_program()
                 if self.previous_block != self.current_bloack.value:
-                    data = {"ts": time.time_ns() // 1_000_000}
+                    gcode_data = {"ts": time.time_ns() // 1_000_000}
                     gcode_data['time'] = time.perf_counter()-start_time
-                    data['block_count'] = self.current_bloack.value
+                    start_time= time.perf_counter()
+                    gcode_data['block_No'] = self.current_bloack.value
                     self.previous_block = self.current_bloack.value
                     logging.info(f"Gcode update: {gcode_data}")
 
