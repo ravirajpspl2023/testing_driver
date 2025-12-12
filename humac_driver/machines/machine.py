@@ -31,7 +31,7 @@ class Machine(mp.Process):
             while True:
                 result = self.driver.poll(handle)
                 logging.info(result)
-        except Exception as e:
+        except Exception or  KeyboardInterrupt as e :
             logging.info(f"[PID {pid}] Connection failed {self.edgeid}: {e}")
         self.driver.disconnect()
 
