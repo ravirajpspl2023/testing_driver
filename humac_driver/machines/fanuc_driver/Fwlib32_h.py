@@ -25,6 +25,8 @@ class CNC_CONF:
     """int: A constant value to request that a function return all axes at once"""
     MAX_PATH = 5
     CURRENT_PATH = None
+    PROGRAME_NAME = ""
+    PROGRAME_ONUMBER = ""
     
 CNC = CNC_CONF()
 
@@ -138,15 +140,19 @@ class ModalData(ctypes.Structure):
 ODBMDL = ModalData
 
 
-class ExecutingProgram(ctypes.Structure):
+class ODBEXEPRG(ctypes.Structure):
     """
     Equivalent of ODBEXEPRG
     """
     _pack_ = 4
     _fields_ = [("name", ctypes.c_char * 36),
                 ("oNumber", ctypes.c_long), ]
-
-ODBEXEPRG = ExecutingProgram
+    @property
+    def __dict__(self):
+        # unreadable
+        CNC.PROGRAME_NAME = self.name.decode('utf-8').rstrip('\x00')
+        CNC.PROGRAME_ONUMBER = self.oNumber
+        return dict((f, getattr(self, f)) for f, _ in self._fields_)
 
 
 class AxisName(ctypes.Structure):

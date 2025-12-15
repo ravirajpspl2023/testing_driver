@@ -101,6 +101,16 @@ class FocasDriver(object):
         data['time'] = end_time-start_time
         return data
     
+    def getProgramName(self, handle):
+        data = {"time":time.time_ns() // 1_000_000}
+        func = fwlib.cnc_exeprgname
+        func.restype = c_short
+        programe = ODBEXEPRG()
+        result = func(handle, byref(programe))
+        logging.info(f"name: {CNC.PROGRAME_NAME}, oNumber: {CNC.PROGRAME_ONUMBER}")
+        data.update(programe.__dict__)
+        return data
+    
     def get_cnc_state(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
@@ -159,6 +169,7 @@ class FocasDriver(object):
     def _get_poll_methods(self):
         return [
             self.get_cnc_sysinfo,
+            self.getProgramName,
             self.get_cnc_state,
             # self.get_torque_servo,
             # self.get_gcode_program
