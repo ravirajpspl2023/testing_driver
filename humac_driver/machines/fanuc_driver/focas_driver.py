@@ -123,6 +123,12 @@ class FocasDriver(object):
         result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
         logging.info(f'result is {result}')
         data.update(buffer.__dict__)
+
+        fanuc = fwlib.cnc_upend
+        fanuc.restype = c_short
+        result = fanuc(handle)
+        logging.info(f'upend result is {result}')
+        
         data['time'] = time.perf_counter()-start_time
         return data
     
