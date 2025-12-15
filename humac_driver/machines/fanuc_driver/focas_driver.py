@@ -120,15 +120,19 @@ class FocasDriver(object):
         fanuc = fwlib.cnc_upload
         fanuc.restype = c_short
         buffer = ODBUP()
-        result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
+        program = []
+        while result == 0 :
+            result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
+            program.append(buffer.__dict__)
         logging.info(f'result is {result}')
-        data.update(buffer.__dict__)
+        
+        data['program'] = program
 
         fanuc = fwlib.cnc_upend
         fanuc.restype = c_short
         result = fanuc(handle)
         logging.info(f'upend result is {result}')
-        
+
         data['time'] = time.perf_counter()-start_time
         return data
     

@@ -160,7 +160,7 @@ class ODBUP (ctypes.Structure):
                 ('data' , ctypes.c_char * 256)]
     @property
     def __dict__(self):
-        return dict((f, getattr(self, f)) for f, _ in self._fields_)
+        return dict((f, getattr(self, f)) for f, _ in self._fields_ if f != "dummy")
 
 class AxisName(ctypes.Structure):
     """
