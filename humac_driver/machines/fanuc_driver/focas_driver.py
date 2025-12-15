@@ -97,10 +97,9 @@ class FocasDriver(object):
         system = ODBSYSEX()
         result = fanuc(handle,byref(system))
         data.update(system.__dict__)
-        end_time = time.perf_counter()
-        data['time'] = end_time-start_time
+        data['time'] = time.perf_counter()-start_time
         return data
-    
+# --------------------------------------- programe name and number read form cnc machine  ---------------------------------    
     def getProgramName(self, handle):
         data = {"time":time.time_ns() // 1_000_000}
         func = fwlib.cnc_exeprgname
@@ -109,6 +108,22 @@ class FocasDriver(object):
         result = func(handle, byref(programe))
         logging.info(f"name: {CNC.PROGRAME_NAME}, oNumber: {CNC.PROGRAME_ONUMBER}")
         data.update(programe.__dict__)
+        return data
+#--------------------------------------- programe read form cnc machine  ---------------------------------    
+    def get_cnc_programe(self,handle):
+        data = {"ts": time.time_ns() // 1_000_000}
+        start_time= time.perf_counter()
+        fanuc = fwlib.cnc_upstart
+        fanuc.restype = c_short
+        result = fanuc(handle,ctypes.c_long(CNC.PROGRAME_ONUMBER))
+        logging.info(f'upstart result is {result}')
+        fanuc = fwlib.cnc_upload
+        fanuc.restype = c_short
+        buffer = ODBUP()
+        result = fanuc(handle,byref(buffer),byref(CNC.PROGRAME_ONUMBER))
+        logging.info(f'result is {result}')
+        data.update(buffer.__dict__)
+        data['time'] = time.perf_counter()-start_time
         return data
     
     def get_cnc_state(self,handle):
@@ -143,9 +158,7 @@ class FocasDriver(object):
 
         result = fanuc(handle,1,CNC.ALL_AXES,length,byref(motor_torque))
         data.update({'spindle':motor_torque.__dict__})
-
-        end_time = time.perf_counter()
-        data['time'] = end_time-start_time
+        data['time'] = time.perf_counter()-start_time
         return data
     
     def get_gcode_program(self,handle):
@@ -170,6 +183,7 @@ class FocasDriver(object):
         return [
             self.get_cnc_sysinfo,
             self.getProgramName,
+            self.get_cnc_programe,
             self.get_cnc_state,
             # self.get_torque_servo,
             # self.get_gcode_program

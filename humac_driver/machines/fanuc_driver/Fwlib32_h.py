@@ -153,7 +153,14 @@ class ODBEXEPRG(ctypes.Structure):
         CNC.PROGRAME_NAME = self.name.decode('utf-8').rstrip('\x00')
         CNC.PROGRAME_ONUMBER = self.oNumber
         return dict((f, getattr(self, f)) for f, _ in self._fields_)
-
+    
+class ODBUP (ctypes.Structure):
+    _pack_ = 4
+    _fields_ = [('dummy', ctypes.c_short *2),
+                ('data' , ctypes.c_char * 256)]
+    @property
+    def __dict__(self):
+        return dict((f, getattr(self, f)) for f, _ in self._fields_)
 
 class AxisName(ctypes.Structure):
     """
