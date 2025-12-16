@@ -123,9 +123,8 @@ class FocasDriver(object):
         program = []
         while result == 0 :
             result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
-            if result != 0:
-                break
-            program.append(buffer.__dict__.get('data'))
+            if result == 0:
+                program.append(buffer.__dict__.get('data'))
         logging.info(f'result is {result}')
         
         data['program'] = program
