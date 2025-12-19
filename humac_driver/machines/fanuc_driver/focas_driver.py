@@ -122,6 +122,7 @@ class FocasDriver(object):
         buffer = ODBUP()
         program = []
         while result == 0 :
+            time.sleep(0.1)
             result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
             if result == 0:
                 program.append(buffer.__dict__.get('data'))
@@ -192,10 +193,10 @@ class FocasDriver(object):
            
     def _get_poll_methods(self):
         return [
-            self.get_cnc_sysinfo,
+            # self.get_cnc_sysinfo,
             self.getProgramName,
             self.get_cnc_programe,
-            self.get_cnc_state,
+            # self.get_cnc_state,
             # self.get_torque_servo,
             # self.get_gcode_program
         ]
