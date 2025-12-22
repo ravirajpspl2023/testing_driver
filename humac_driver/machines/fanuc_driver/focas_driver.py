@@ -43,6 +43,7 @@ class FocasDriver(object):
         self.port = port
         self.timeout = timeout
         self.handle = None
+        self.previous_program_number = None
         self.gcode_thread = GcodeThread(ip, port, timeout) 
     
     def connect(self,):
@@ -113,27 +114,28 @@ class FocasDriver(object):
     def get_cnc_programe(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
-        fanuc = fwlib.cnc_upstart
-        fanuc.restype = c_short
-        result = fanuc(handle,ctypes.c_long(CNC.PROGRAME_ONUMBER))
-        logging.info(f'upstart result is {result}')
-        fanuc = fwlib.cnc_upload
-        fanuc.restype = c_short
-        buffer = ODBUP()
-        program = []
-        while result == 0 :
-            time.sleep(0.1)
-            result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
-            if result == 0:
-                program.append(buffer.__dict__.get('data'))
-        logging.info(f'result is {result}')
-        
-        data['program'] = program
+        if CNC.PROGRAME_ONUMBER != self.previous_program_number:
+            fanuc = fwlib.cnc_upstart
+            fanuc.restype = c_short
+            result = fanuc(handle,ctypes.c_long(CNC.PROGRAME_ONUMBER))
+            logging.info(f'upstart result is {result}')
+            fanuc = fwlib.cnc_upload
+            fanuc.restype = c_short
+            buffer = ODBUP()
+            program = []
+            while result == 0 :
+                result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
+                if result == 0:
+                    time.sleep(0.1)
+                    program.append(buffer.__dict__.get('data'))
+            logging.info(f'result is {result}')
+            
+            data['program'] = program
 
-        fanuc = fwlib.cnc_upend
-        fanuc.restype = c_short
-        result = fanuc(handle)
-        logging.info(f'upend result is {result}')
+            fanuc = fwlib.cnc_upend
+            fanuc.restype = c_short
+            result = fanuc(handle)
+            logging.info(f'upend result is {result}')
 
         data['time'] = time.perf_counter()-start_time
         return data
