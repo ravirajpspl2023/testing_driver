@@ -115,6 +115,7 @@ class FocasDriver(object):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
         if CNC.PROGRAME_ONUMBER != self.previous_program_number:
+            self.previous_program_number = CNC.PROGRAME_ONUMBER
             fanuc = fwlib.cnc_upstart
             fanuc.restype = c_short
             result = fanuc(handle,ctypes.c_long(CNC.PROGRAME_ONUMBER))
