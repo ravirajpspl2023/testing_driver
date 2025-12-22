@@ -49,7 +49,7 @@ class GcodeThread(threading.Thread):
         self.previous_block = -1
         self.blk_no = c_long()
         self.prog_no = c_long()
-        # self.start()
+        self.start()
 
     def connect(self,):
         start_time = time.time()
