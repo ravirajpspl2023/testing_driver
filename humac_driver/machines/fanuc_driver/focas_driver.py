@@ -194,11 +194,12 @@ class FocasDriver(object):
         return data
            
     def _get_poll_methods(self):
+
         return [
-            self.get_cnc_sysinfo,
+            # self.get_cnc_sysinfo,
             self.getProgramName,
             self.get_cnc_programe,
-            # self.get_cnc_state,
+            self.get_cnc_state,
             # self.get_torque_servo,
             # self.get_gcode_program
         ]
@@ -212,7 +213,7 @@ class FocasDriver(object):
             start_time= time.perf_counter()
             for method in self._get_poll_methods():
                 results[method.__name__] = method(handle)
-
+            results['gcode_thread_status'] = self.gcode_thread.is_alive()
             results['poll_time'] = time.perf_counter() - start_time
             return results
     
