@@ -84,13 +84,13 @@ class GcodeThread(threading.Thread):
     def get_gcode_program(self):
         fanuc = fwlib.cnc_rdblkcount
         fanuc.restype = c_short
-        blk_no = c_long()
-        result = fanuc(self.handle,byref(blk_no))
-        logging.info(f"get-block {blk_no.value}")
+        # blk_no = c_long()
+        result = fanuc(self.handle,byref(self.blk_no))
+        logging.info(f"get-block {self.blk_no.value}")
 
-        fanuc = fwlib.cnc_rdactpt
-        fanuc.restype = c_short
-        result = fanuc(self.handle,byref(self.prog_no),byref(self.blk_no))
+        # fanuc = fwlib.cnc_rdactpt
+        # fanuc.restype = c_short
+        # result = fanuc(self.handle,byref(self.prog_no),byref(self.blk_no))
 
         if result == -16 :
             self.connect()
@@ -107,7 +107,6 @@ class GcodeThread(threading.Thread):
                     gcode_data['time'] = time.perf_counter()-start_time
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
-                    gcode_data['program_No'] = self.prog_no.value
                     self.previous_block = self.blk_no.value
                     logging.info(f"Gcode update: {gcode_data}")
 
