@@ -86,8 +86,7 @@ class GcodeThread(threading.Thread):
         fanuc.restype = c_short
         # blk_no = c_long()
         result = fanuc(self.handle,byref(self.blk_no))
-        logging.info(f"get-block {self.blk_no.value}")
-
+        
         # fanuc = fwlib.cnc_rdactpt
         # fanuc.restype = c_short
         # result = fanuc(self.handle,byref(self.prog_no),byref(self.blk_no))
