@@ -29,6 +29,7 @@ class Machine(mp.Process):
         try:
             handle = self.driver.connect()
             result = self.driver.poll(handle)
+            logging.info(f"{result}")
             while True:
                 # result = self.driver.poll(handle)
                 # logging.info(result)
