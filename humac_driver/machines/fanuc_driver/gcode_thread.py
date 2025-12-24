@@ -82,19 +82,16 @@ class GcodeThread(threading.Thread):
         return
 
     def get_gcode_program(self):
-        # fanuc = fwlib.cnc_rdblkcount
-        # fanuc.restype = c_short
-        # result = fanuc(self.handle,byref(self.blk_no))
-        # fanuc = fwlib.cnc_rdactpt
-        # fanuc.restype = c_short
-        # result = fanuc(self.handle,byref(self.prog_no),byref(self.blk_no))
-
-        fanuc = fwlib.cnc_rdexecpt
+        fanuc = fwlib.cnc_rdblkcount
         fanuc.restype = c_short
-        pact  = PRGPNT()
-        pnext = PRGPNT()
-        result = fanuc(self.handle,byref(pact),byref(pnext))
-        logging.debug(f"gcode pact: {pact.__dict__}, pnext: {pnext.__dict__}")
+        blk_no = c_long()
+        result = fanuc(self.handle,byref(blk_no))
+        logging.info(f"get-block {blk_no.value}")
+
+        fanuc = fwlib.cnc_rdactpt
+        fanuc.restype = c_short
+        result = fanuc(self.handle,byref(self.prog_no),byref(self.blk_no))
+
         if result == -16 :
             self.connect()
             time.sleep(0.1)
