@@ -77,8 +77,9 @@ class GcodeThread(threading.Thread):
             result = func(ip_bytes, self.port, self.timeout, byref(handle)) 
            # FocasExceptionRaiser(result, context=self) 
             elapsed = time.time() - start_time
+            self.handle = handle.value
             logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
-        return handle.value
+        return
 
     def get_gcode_program(self):
         # fanuc = fwlib.cnc_rdblkcount
@@ -89,10 +90,11 @@ class GcodeThread(threading.Thread):
         result = fanuc(self.handle,byref(self.prog_no),byref(self.blk_no))
         logging.info(f"result: {result}")
         if result == -16 :
-            self._stop_event.set()
+            self.connect()
+            time.sleep(0.1)
 
     def run(self):
-        self.handle = self.connect()
+        self.connect()
         start_time = time.perf_counter()
         while not self._stop_event.is_set():
             if self.handle:
