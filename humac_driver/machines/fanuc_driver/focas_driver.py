@@ -91,7 +91,7 @@ class FocasDriver(object):
         result = fwlib.cnc_getpath(handle, ctypes.byref(current_path), ctypes.byref(max_paths))
         CNC.MAX_PATH = max_paths
         CNC.CURRENT_PATH = current_path
-        logging.info(f"current_path: {current_path.value},max_path: {max_paths.value}")
+        # logging.info(f"current_path: {current_path.value},max_path: {max_paths.value}")
 
         fanuc = fwlib.cnc_sysinfo_ex
         fanuc.restype = c_short
@@ -107,7 +107,7 @@ class FocasDriver(object):
         func.restype = c_short
         programe = ODBEXEPRG()
         result = func(handle, byref(programe))
-        logging.info(f"name: {CNC.PROGRAME_NAME}, oNumber: {CNC.PROGRAME_ONUMBER}")
+        # logging.info(f"name: {CNC.PROGRAME_NAME}, oNumber: {CNC.PROGRAME_ONUMBER}")
         data.update(programe.__dict__)
         return data
 #--------------------------------------- programe read form cnc machine  ---------------------------------    
@@ -127,7 +127,6 @@ class FocasDriver(object):
             while result == 0 :
                 result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
                 if result == 0:
-                    time.sleep(0.1)
                     program.append(buffer.__dict__.get('data'))
             logging.info(f'result is {result}')
             
@@ -199,7 +198,7 @@ class FocasDriver(object):
             self.get_cnc_sysinfo,
             self.getProgramName,
             self.get_cnc_programe,
-            self.get_cnc_state,
+            # self.get_cnc_state,
             # self.get_torque_servo,
             # self.get_gcode_program
         ]
