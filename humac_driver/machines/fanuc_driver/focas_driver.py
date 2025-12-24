@@ -213,7 +213,6 @@ class FocasDriver(object):
             start_time= time.perf_counter()
             for method in self._get_poll_methods():
                 results[method.__name__] = method(handle)
-            results['gcode_thread_status'] = self.gcode_thread.is_alive()
             results['poll_time'] = time.perf_counter() - start_time
             return results
     
