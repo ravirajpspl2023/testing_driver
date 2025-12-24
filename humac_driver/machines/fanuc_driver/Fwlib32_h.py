@@ -677,3 +677,16 @@ class ODBLOAD(ctypes.Structure):
         #     for i in self.data:
         #         torque['torque'].append(self.data[i])
         return torque
+
+
+class PRGPNT(ctypes.Structure):
+    """
+    Equivalent of PRGPNT
+    """
+    _pack_ = 4
+    _fields_ = [("prog_no", ctypes.c_long),
+                ("blk_no", ctypes.c_short), ]
+    
+    @property
+    def __dict__(self):
+        return dict((f, getattr(self, f)) for f, _ in self._fields_)

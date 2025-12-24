@@ -88,6 +88,13 @@ class GcodeThread(threading.Thread):
         fanuc = fwlib.cnc_rdactpt
         fanuc.restype = c_short
         result = fanuc(self.handle,byref(self.prog_no),byref(self.blk_no))
+
+        fanuc = fwlib.cnc_rdexecpt
+        fanuc.restype = c_short
+        pact  = PRGPNT()
+        pnext = PRGPNT()
+        result = fanuc(self.handle,byref(pact),byref(pnext))
+        logging.debug(f"gcode pact: {pact.__dict__}, pnext: {pnext.__dict__}")
         if result == -16 :
             self.connect()
             time.sleep(0.1)
