@@ -114,7 +114,8 @@ class FocasDriver(object):
     def get_cnc_programe(self,handle):
         data = {"ts": time.time_ns() // 1_000_000}
         start_time= time.perf_counter()
-        self.getProgramName(handle)
+        new_data = self.getProgramName(handle)
+        data.update(new_data)
         if CNC.PROGRAME_ONUMBER != self.previous_program_number:
             self.previous_program_number = CNC.PROGRAME_ONUMBER
             fanuc = fwlib.cnc_upstart

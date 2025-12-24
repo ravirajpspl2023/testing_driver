@@ -88,7 +88,6 @@ class GcodeThread(threading.Thread):
         fanuc = fwlib.cnc_rdactpt
         fanuc.restype = c_short
         result = fanuc(self.handle,byref(self.prog_no),byref(self.blk_no))
-        logging.info(f"result: {result}")
         if result == -16 :
             self.connect()
             time.sleep(0.1)
