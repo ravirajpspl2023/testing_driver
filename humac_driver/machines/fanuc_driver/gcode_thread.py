@@ -102,14 +102,14 @@ class GcodeThread(threading.Thread):
         while not self._stop_event.is_set():
             if self.handle: 
                 self.get_gcode_program()
-                # if self.previous_block != self.blk_no.value:
-                #     gcode_data = {"ts": time.time_ns() // 1_000_000}
-                #     gcode_data['time'] = time.perf_counter()-start_time
-                #     start_time= time.perf_counter()
-                #     gcode_data['block_No'] = self.blk_no.value
-                #     gcode_data['program_No'] = self.prog_no.value
-                #     self.previous_block = self.blk_no.value
-                #     logging.info(f"Gcode update: {gcode_data}")
+                if self.previous_block != self.blk_no.value:
+                    gcode_data = {"ts": time.time_ns() // 1_000_000}
+                    gcode_data['time'] = time.perf_counter()-start_time
+                    start_time= time.perf_counter()
+                    gcode_data['block_No'] = self.blk_no.value
+                    gcode_data['program_No'] = self.prog_no.value
+                    self.previous_block = self.blk_no.value
+                    logging.info(f"Gcode update: {gcode_data}")
 
     def stop(self):
         if self.handle != -16 or self.handle is not None:
