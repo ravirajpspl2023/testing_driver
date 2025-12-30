@@ -70,7 +70,6 @@ class FocasDriver(object):
             ip_bytes = self.ip.encode('utf-8')
             handle = c_ushort(0)            
             result = func(ip_bytes, self.port, self.timeout, byref(handle)) 
-           # FocasExceptionRaiser(result, context=self) 
             elapsed = time.time() - start_time
             logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
         return handle.value
@@ -130,6 +129,9 @@ class FocasDriver(object):
                 result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
                 if result == 0:
                     program.append(buffer.__dict__.get('data'))
+                if result == -16:
+                    self.connect()
+                    time.sleep(0.1)
             logging.info(f'result is {result}')
             
             data['program'] = program
