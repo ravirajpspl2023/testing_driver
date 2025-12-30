@@ -117,6 +117,7 @@ class FocasDriver(object):
         data.update(new_data)
         if CNC.PROGRAME_ONUMBER != self.previous_program_number:
             self.previous_program_number = CNC.PROGRAME_ONUMBER
+            logging.info(f"change programe {CNC.PROGRAME_ONUMBER}")
             fanuc = fwlib.cnc_upstart
             fanuc.restype = c_short
             result = fanuc(handle,ctypes.c_long(CNC.PROGRAME_ONUMBER))
