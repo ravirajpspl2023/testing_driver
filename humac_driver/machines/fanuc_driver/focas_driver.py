@@ -8,6 +8,7 @@ from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
 from humac_driver.machines.fanuc_driver.Gblock_thread import BlockThread
+import datetime
 import logging
 from humac_driver.const import *
 
@@ -44,6 +45,7 @@ class FocasDriver(object):
         self.timeout = timeout
         self.handle = None
         self.previous_program_number = None
+        self.previous_date = None
         self.block_thread = BlockThread(ip, port, timeout) 
     
     def connect(self,):
@@ -113,8 +115,9 @@ class FocasDriver(object):
         start_time= time.perf_counter()
         new_data = self.getProgramName(handle)
         data.update(new_data)
-        if CNC.PROGRAME_ONUMBER != self.previous_program_number:
+        if CNC.PROGRAME_ONUMBER != self.previous_program_number or self.previous_date != datetime.date.today():
             self.previous_program_number = CNC.PROGRAME_ONUMBER
+            self.previous_date = datetime.date.today()
             logging.info(f"change programe {CNC.PROGRAME_ONUMBER}")
             fanuc = fwlib.cnc_upstart
             fanuc.restype = c_short
@@ -128,6 +131,8 @@ class FocasDriver(object):
                 result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
                 if result == 0:
                     program.append(buffer.__dict__.get('data'))
+                if result == 5 :
+                    break
                 if result == -16:
                     self.connect()
                     time.sleep(0.1)
