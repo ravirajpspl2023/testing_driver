@@ -29,8 +29,9 @@ class Machine(mp.Process):
         try:
             handle = self.driver.connect()
             while True:
-                result = self.driver.poll(handle) 
-                logging.info(result)
+                result = self.driver.poll(handle)
+                if result.get('get_cnc_programe',{}).get('program',None):
+                    logging.info(result)
                 start_time = time.time()
                 while time.time() - start_time < 1:
                     pass
