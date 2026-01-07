@@ -7,7 +7,7 @@ from functools import partial
 from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
-from humac_driver.machines.fanuc_driver.gcode_thread import GcodeThread
+from humac_driver.machines.fanuc_driver.Gblock_thread import BlockThread
 import logging
 from humac_driver.const import *
 
@@ -44,7 +44,7 @@ class FocasDriver(object):
         self.timeout = timeout
         self.handle = None
         self.previous_program_number = None
-        self.gcode_thread = GcodeThread(ip, port, timeout) 
+        self.block_thread = BlockThread(ip, port, timeout) 
     
     def connect(self,):
         start_time = time.time()
@@ -213,7 +213,7 @@ class FocasDriver(object):
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
             fwlib.cnc_freelibhndl(self.handle)
-        self.gcode_thread.stop()
+        self.block_thread.stop()
         
 
 

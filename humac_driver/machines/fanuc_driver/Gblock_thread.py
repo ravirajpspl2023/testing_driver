@@ -38,7 +38,7 @@ if sys.platform == 'linux':
         logging.error(f"{FILE_NAME_LIN}:{e}")
         fwlib= None
 
-class GcodeThread(threading.Thread):
+class BlockThread(threading.Thread):
     def __init__(self,  ip,port,timeout=10):
         super().__init__()
         self.ip = ip
