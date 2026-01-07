@@ -182,7 +182,7 @@ class FocasDriver(object):
 
         return [
             # self.get_cnc_sysinfo,
-            self.get_cnc_state,
+            # self.get_cnc_state,
             self.get_cnc_programe,
             # self.get_torque_servo,
         ]
