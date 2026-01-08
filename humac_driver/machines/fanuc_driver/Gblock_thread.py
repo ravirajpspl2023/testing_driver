@@ -107,7 +107,7 @@ class BlockThread(threading.Thread):
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
                     self.previous_block = self.blk_no.value
-                    logging.info(f"Block update: {gcode_data}")
+                    logging.info(f"Block update: {CNC.PROGRAME_NAME}-{gcode_data}")
 
     def stop(self):
         if self.handle != -16 or self.handle is not None:
