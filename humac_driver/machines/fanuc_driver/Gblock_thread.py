@@ -103,7 +103,7 @@ class BlockThread(threading.Thread):
                 self.get_gcode_program()
                 if self.previous_block != self.blk_no.value:
                     gcode_data = {"ts": time.time_ns() // 1_000_000}
-                    gcode_data['time'] = round(time.perf_counter()-start_time)
+                    gcode_data['time'] = round(time.perf_counter()-start_time, 4)
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
                     self.previous_block = self.blk_no.value
