@@ -130,16 +130,15 @@ class FocasDriver(object):
             while result == 0 :
                 result = fanuc(handle,byref(buffer),byref(ctypes.c_long(256)))
                 if result == 0:
-                    program.append(buffer.__dict__.get('data'))
+                    program.append((buffer.__dict__.get('data')).decode('utf-8',errors='ignore'))
                 if result == 5 :
                     break
                 if result == -16:
                     self.connect()
                     time.sleep(0.1)
             logging.info(f'result is {result}')
-            
             data['program'] = program
-
+            
             fanuc = fwlib.cnc_upend
             fanuc.restype = c_short
             result = fanuc(handle)

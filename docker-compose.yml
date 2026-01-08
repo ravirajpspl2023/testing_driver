@@ -8,26 +8,26 @@ services:
     container_name: Humac_fanuc_driver
     image: humac_fanuc_image
     privileged: true
-
     network_mode: host
+    depends_on:
+      - redis
     volumes:
-      # - ./humac_driver:/humac/humac_driver
       - ./:/humac
 
-#   redis:
-#     image: redis:7-alpine
-#     container_name: redis_database
-#     restart: always
-#     ports:
-#       - "6379:6379"
-#     network_mode: host
-#     volumes:
-#       - redis-data:/data
-#     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-#     logging:
-#       driver: "json-file"
-#       options:
-#         max-size: "10m"
+  redis:
+    image: redis:7-alpine
+    container_name: redis_database
+    restart: always
+    ports:
+      - "6379:6379"
+    network_mode: host
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
 
-# volumes:
-#   redis-data:
+volumes:
+  redis-data:
