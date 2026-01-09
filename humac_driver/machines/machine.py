@@ -21,8 +21,6 @@ class Machine(mp.Process):
         self.port = port
         self.timeout = timeout
         self.mqtt_sender = MqttSender()
-        while not self.mqtt_sender.connected:
-            time.sleep(0.1)
         self.edgeid = edgeId
         self.driver = None
         logging.info(f"Starting machine with {edgeId}") 
