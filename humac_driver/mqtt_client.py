@@ -41,8 +41,9 @@ class MqttSender(threading.Thread):
     def publish_data(self,data):
         if not self.connected:
             return
-        # json_data = json.dumps(data)
+        logging.info(f"{TOPIC}: {data}")
         result = self.client.publish(TOPIC,json.dumps(data),qos=1)
+        logging.info(f"result: {result}")
         result.wait_for_publish()
         logging.info(f"Published data to topic {TOPIC}: {data}")
 
@@ -52,9 +53,11 @@ class MqttSender(threading.Thread):
             self._client_connect()
             self.client.loop_start()
             while self.running:
-                if self.connected:
-                    result =self.client.publish(TOPIC, json.dumps({"get_cnc_programe": {"ts": 1767947673360, "name": "O21", "program": ["%\nO0021(FLAT PROGRAM)\nN1 \nG0G91G28Z.0\nG0G90G55X-665.5Y0.0\nG0G43Z200.0\nS1200M03 \nM08\nG0Z5.0 \nG01Z0.0F500\nG01Z-2.0F300 \nG01Y90.0F300 \nG0Z0.0 \nG0Y0.0 \nG01Z-3.5F300 \nG01Y90.0F300 \nG0Z0.0 \nG0Y0.0 \nG01Z-4.5F300 \nG01Y90.0F300 \nG0Z0.0 \nG0Y0.0 \nG01Z-4.99F300\nG01Y15", "0.0F300\nG0G80G40Z200.0 \nM05\nM09\nG0G91G28Z0.0Y0.0 \nM30\n \nG0Z0.0 \nG0Y0.0 \nG01Z-5.0 \nG01Y110.0\nG0Z0.0 \nG0Y0.0 \nG01Z-6.5 \nG01Y120.0\nG0Z0.0 \nG0Y0.0 \nG01Z-6.975 \nG01Y150.0\nG0Z0.0 \nM09\nG0G80G40Z100.0 \nM05\nM09\nG0G91G28Y0.0Z0.0 \nM30\n%0 \nG0Y0.0 \nG01Z-4.99F300\nG01Y15"], "time": 0.0931}, "poll_time": 0.0932}), qos=1)
-                    result.wait_for_publish()
+                pass
+                # if self.connected:
+                    # result =self.client.publish(TOPIC, json.dumps({"get_cnc_programe": {"ts": 1767947673360, "name": "O21", "program": ["%\nO0021(FLAT PROGRAM)\nN1 \nG0G91G28Z.0\nG0G90G55X-665.5Y0.0\nG0G43Z200.0\nS1200M03 \nM08\nG0Z5.0 \nG01Z0.0F500\nG01Z-2.0F300 \nG01Y90.0F300 \nG0Z0.0 \nG0Y0.0 \nG01Z-3.5F300 \nG01Y90.0F300 \nG0Z0.0 \nG0Y0.0 \nG01Z-4.5F300 \nG01Y90.0F300 \nG0Z0.0 \nG0Y0.0 \nG01Z-4.99F300\nG01Y15", "0.0F300\nG0G80G40Z200.0 \nM05\nM09\nG0G91G28Z0.0Y0.0 \nM30\n \nG0Z0.0 \nG0Y0.0 \nG01Z-5.0 \nG01Y110.0\nG0Z0.0 \nG0Y0.0 \nG01Z-6.5 \nG01Y120.0\nG0Z0.0 \nG0Y0.0 \nG01Z-6.975 \nG01Y150.0\nG0Z0.0 \nM09\nG0G80G40Z100.0 \nM05\nM09\nG0G91G28Y0.0Z0.0 \nM30\n%0 \nG0Y0.0 \nG01Z-4.99F300\nG01Y15"], "time": 0.0931}, "poll_time": 0.0932}), qos=1)
+                    # result.wait_for_publish()
+
 
                 time.sleep(1)
          except Exception as e:
