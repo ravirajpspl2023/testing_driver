@@ -42,7 +42,7 @@ class MqttSender(threading.Thread):
         if not self.connected:
             return
         json_data = json.dumps(data)
-        result = self.client.publish(TOPIC,json_data,qos=1)
+        result = self.client.publish(TOPIC,json_data,qos=0)
         result.wait_for_publish()
         logging.info(f"Published data to topic {TOPIC}: {json_data}")
 
