@@ -105,7 +105,7 @@ class BlockThread(threading.Thread):
                     gcode_data = {"ts": time.time_ns() // 1_000_000}
                     gcode_data['time'] = round(time.perf_counter()-start_time, 4)
                     start_time= time.perf_counter()
-                    gcode_data['block_No'] = self.blk_no.value.decode('utf-8')
+                    gcode_data['block_No'] = self.blk_no.value
                     gcode_data['program_No'] = CNC.PROGRAME_ONUMBER 
                     self.mqtt_sender.publish_data(gcode_data)
                     self.previous_block = self.blk_no.value
