@@ -39,6 +39,7 @@ class MqttSender(threading.Thread):
         self.connected = False
     
     def publish_data(self,data):
+        logging.info(f"Publishing data to MQTT: {data}")
         if not self.connected:
             return
         json_data = json.dumps(data)

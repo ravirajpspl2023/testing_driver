@@ -35,8 +35,7 @@ class Machine(mp.Process):
             while True:
                 result = self.driver.poll(handle)
                 if result.get('get_cnc_programe',{}).get('program',None):
-                    # self.mqtt_sender.publish_data(result)
-                    logging.info(f"result: {result}")
+                    self.mqtt_sender.publish_data(result)
                 start_time = time.time()
                 while time.time() - start_time < 1:
                     pass

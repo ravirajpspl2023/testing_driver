@@ -137,9 +137,8 @@ class FocasDriver(object):
                     self.connect()
                     time.sleep(0.1)
             logging.info(f'result is {result}')
-            data['program'] = program
             data['name'] = CNC.PROGRAME_NAME
-            
+            data['program'] = program            
             fanuc = fwlib.cnc_upend
             fanuc.restype = c_short
             result = fanuc(handle)
