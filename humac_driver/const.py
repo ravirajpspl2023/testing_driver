@@ -8,4 +8,4 @@ FILE_NAME_LIN = "libfwlib32-linux-armv7.so.1.0.5"
 
 MQTT_HOST = "35.238.197.143"
 MQTT_PORT = 1883
-TOPIC = "pspl-iot/telemetry_cnc/progrme_data"
+TOPIC = "pspl-iot/telemetry_cnc/programe_data"
