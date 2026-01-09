@@ -39,14 +39,15 @@ if sys.platform == 'linux':
 
 
 class FocasDriver(object):
-    def __init__(self,ip,port,timeout=10):
+    def __init__(self,ip,port,timeout=10,mqtt_sender=None):
         self.ip = ip
         self.port = port
         self.timeout = timeout
+        self.mqtt_sender = mqtt_sender
         self.handle = None
         self.previous_program_number = None
         self.previous_date = None
-        self.block_thread = BlockThread(ip, port, timeout) 
+        self.block_thread = BlockThread(ip, port, timeout,self.mqtt_sender) 
     
     def connect(self,):
         start_time = time.time()

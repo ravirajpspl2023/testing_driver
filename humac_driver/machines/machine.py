@@ -1,5 +1,6 @@
 import multiprocessing as mp
 from humac_driver.machines.fanuc_driver.focas_driver import FocasDriver
+from humac_driver.mqtt_client import MqttSender
 import os
 import time
 import logging
@@ -19,18 +20,20 @@ class Machine(mp.Process):
         self.ip = ip
         self.port = port
         self.timeout = timeout
+        self.mqtt_sender = MqttSender()
         self.edgeid = edgeId
         self.driver = None
         logging.info(f"Starting machine with {edgeId}") 
         self.start()  # Safe now
     def run(self) -> None:
         pid = os.getpid()
-        self.driver = FocasDriver(self.ip,self.port,self.timeout)
+        self.driver = FocasDriver(self.ip,self.port,self.timeout,self.mqtt_sender)
         try:
             handle = self.driver.connect()
             while True:
                 result = self.driver.poll(handle)
                 if result.get('get_cnc_programe',{}).get('program',None):
+                    self.mqtt_sender.publish_data(result)
                     logging.info(result)
                 start_time = time.time()
                 while time.time() - start_time < 1:
@@ -38,10 +41,12 @@ class Machine(mp.Process):
         except Exception or  KeyboardInterrupt as e :
             logging.info(f"[PID {pid}] Connection failed {self.edgeid}: {e}")
         self.driver.disconnect()
+        self.mqtt_sender.stop()
 
     def terminate(self) -> None:
         logging.info(f"Terminating machine {self.edgeid}")
         self.driver.disconnect()
+        self.mqtt_sender.stop()
         super().terminate()
     
 

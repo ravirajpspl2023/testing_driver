@@ -39,16 +39,16 @@ if sys.platform == 'linux':
         fwlib= None
 
 class BlockThread(threading.Thread):
-    def __init__(self,  ip,port,timeout=10):
+    def __init__(self,  ip,port,timeout=10,mqtt_sender=None):
         super().__init__()
         self.ip = ip
         self.port = port
         self.timeout = timeout
         self.handle = None
+        self.mqtt_sender = mqtt_sender
         self._stop_event = threading.Event()
         self.previous_block = -1
         self.blk_no = c_long()
-        self.prog_no = c_long()
         self.start()
 
     def connect(self,):
@@ -106,8 +106,10 @@ class BlockThread(threading.Thread):
                     gcode_data['time'] = round(time.perf_counter()-start_time, 4)
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
+                    gcode_data['program_No'] = CNC.PROGRAME_ONUMBER 
+                    self.mqtt_sender.publish_data(gcode_data)
                     self.previous_block = self.blk_no.value
-                    logging.info(f"Block update: {CNC.PROGRAME_NAME}-{gcode_data}")
+                    logging.info(f"Block update: {gcode_data}")
 
     def stop(self):
         if self.handle != -16 or self.handle is not None:
