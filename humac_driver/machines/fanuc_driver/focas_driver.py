@@ -145,7 +145,7 @@ class FocasDriver(object):
             result = fanuc(handle)
             logging.info(f'upend result is {result}')
 
-        data['time'] = time.perf_counter()-start_time
+        data['time'] = round(time.perf_counter()-start_time,4)
         return data
     
     def get_cnc_state(self,handle):
@@ -201,7 +201,7 @@ class FocasDriver(object):
             start_time= time.perf_counter()
             for method in self._get_poll_methods():
                 results[method.__name__] = method(handle)
-            results['poll_time'] = time.perf_counter() - start_time
+            results['poll_time'] = round(time.perf_counter() - start_time,4)
             return results
     
             # methods = self._get_poll_methods()
