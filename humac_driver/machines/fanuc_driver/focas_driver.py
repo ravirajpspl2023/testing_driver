@@ -139,7 +139,6 @@ class FocasDriver(object):
             logging.info(f'result is {result}')
             data['program'] = program
             data['name'] = CNC.PROGRAME_NAME
-            data['onumber'] = CNC.PROGRAME_ONUMBER
             
             fanuc = fwlib.cnc_upend
             fanuc.restype = c_short
