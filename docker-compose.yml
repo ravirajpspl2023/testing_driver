@@ -9,8 +9,6 @@ services:
     image: humac_fanuc_image
     privileged: true
     network_mode: host
-    depends_on:
-      - redis
     volumes:
       - ./:/humac
 

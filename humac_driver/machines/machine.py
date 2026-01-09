@@ -21,6 +21,8 @@ class Machine(mp.Process):
         self.port = port
         self.timeout = timeout
         self.mqtt_sender = MqttSender()
+        while not self.mqtt_sender.connected:
+            time.sleep(0.1)
         self.edgeid = edgeId
         self.driver = None
         logging.info(f"Starting machine with {edgeId}") 
@@ -34,7 +36,6 @@ class Machine(mp.Process):
                 result = self.driver.poll(handle)
                 if result.get('get_cnc_programe',{}).get('program',None):
                     self.mqtt_sender.publish_data(result)
-                    logging.info(result)
                 start_time = time.time()
                 while time.time() - start_time < 1:
                     pass
