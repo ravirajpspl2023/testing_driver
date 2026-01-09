@@ -135,7 +135,7 @@ class ODBEXEPRG(ctypes.Structure):
     def __dict__(self):
         # unreadable
         CNC.PROGRAME_NAME = self.name.decode('utf-8').rstrip('\x00')
-        CNC.PROGRAME_ONUMBER = self.oNumbers
+        CNC.PROGRAME_ONUMBER = self.oNumberss
         return dict((f, getattr(self, f)) for f, _ in self._fields_)
     
     
