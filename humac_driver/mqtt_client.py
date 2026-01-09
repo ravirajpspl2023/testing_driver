@@ -39,9 +39,10 @@ class MqttSender(threading.Thread):
         self.connected = False
     
     def publish_data(self,data):
+        logging.info(f"Publishing data to topic  {data}")
         if not self.connected:
+            logging.warning("MQTT client is not connected. Cannot publish data.")
             return
-        logging.info(f"{TOPIC}: {data}")
         result = self.client.publish(TOPIC,json.dumps(data),qos=1)
         logging.info(f"result: {result}")
         result.wait_for_publish()
