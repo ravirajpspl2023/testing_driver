@@ -24,7 +24,7 @@ class Machine(mp.Process):
         self.timeout = timeout
         self.event_queue = Queue(maxsize=1024000)
         self.lock = threading.Lock()
-        self.mqtt_sender = MqttSender()
+        self.mqtt_sender = MqttSender(self.event_queue)
         self.edgeid = edgeId
         self.driver = None
         logging.info(f"Starting machine with {edgeId}") 

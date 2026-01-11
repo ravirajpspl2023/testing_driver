@@ -1,12 +1,13 @@
 import paho.mqtt.client as mqtt
 from humac_driver.const import *
+from multiprocessing import Queue
 import json
 import time
 import logging
 import threading
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 class MqttSender(threading.Thread):
-    def __init__(self,event_queue=None):
+    def __init__(self,event_queue=Queue):
         threading.Thread.__init__(self)
         self.running = True
         self.connected = False
@@ -55,7 +56,7 @@ class MqttSender(threading.Thread):
             self._client_connect()
             self.client.loop_start()
             while self.running:
-                if self.connected and self.event_queue.empty() is False:
+                if self.connected and not self.event_queue.empty():
                     for i in range(self.event_queue.qsize()):
                         result =self.client.publish(TOPIC, json.dumps(self.event_queue.get_nowait()), qos=1)
                         result.wait_for_publish()
