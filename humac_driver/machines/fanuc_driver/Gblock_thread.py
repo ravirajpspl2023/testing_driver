@@ -111,10 +111,8 @@ class BlockThread(threading.Thread):
                     gcode_data['program_No'] = CNC.PROGRAME_ONUMBER 
                     with self.Lock:
                         self.event_queue.put_nowait(gcode_data)
-                    # self.mqtt_sender.publish_data(gcode_data)
                     logging.info(f"BlockThread gcode_data: {gcode_data}")
                     self.previous_block = self.blk_no.value
-                    # logging.info(f"Block update: {gcode_data}")
 
     def stop(self):
         if self.handle != -16 or self.handle is not None:

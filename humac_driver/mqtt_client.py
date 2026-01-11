@@ -17,7 +17,7 @@ class MqttSender(threading.Thread):
     def _client_connect(self):
         self.client = mqtt.Client(
             mqtt.CallbackAPIVersion.VERSION2,
-            client_id="humac_driver",
+            client_id="VMC-09",
             clean_session=True,
             reconnect_on_failure=True
         )
