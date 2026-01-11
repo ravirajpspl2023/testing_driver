@@ -6,10 +6,11 @@ import logging
 import threading
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 class MqttSender(threading.Thread):
-    def __init__(self,):
+    def __init__(self,event_queue=None):
         threading.Thread.__init__(self)
         self.running = True
         self.connected = False
+        self.event_queue = event_queue
         self.start()
         
     def _client_connect(self):
@@ -54,13 +55,11 @@ class MqttSender(threading.Thread):
             self._client_connect()
             self.client.loop_start()
             while self.running:
-                pass
-                # if self.connected:
-                    # result =self.client.publish(TOPIC, json.dumps({"get_cnc_programe": {"ts": 1767947673360, "name": "O21", "program": ["%\nO0021(FLAT PROGRAM)\nN1 \nG0G91G28Z.0\nG0G90G55X-665.5Y0.0\nG0G43Z200.0\nS1200M03 \nM08\nG0Z5.0 \nG01Z0.0F500\nG01Z-2.0F300 \nG01Y90.0F300 \nG0Z0.0 \nG0Y0.0 \nG01Z-3.5F300 \nG01Y90.0F300 \nG0Z0.0 \nG0Y0.0 \nG01Z-4.5F300 \nG01Y90.0F300 \nG0Z0.0 \nG0Y0.0 \nG01Z-4.99F300\nG01Y15", "0.0F300\nG0G80G40Z200.0 \nM05\nM09\nG0G91G28Z0.0Y0.0 \nM30\n \nG0Z0.0 \nG0Y0.0 \nG01Z-5.0 \nG01Y110.0\nG0Z0.0 \nG0Y0.0 \nG01Z-6.5 \nG01Y120.0\nG0Z0.0 \nG0Y0.0 \nG01Z-6.975 \nG01Y150.0\nG0Z0.0 \nM09\nG0G80G40Z100.0 \nM05\nM09\nG0G91G28Y0.0Z0.0 \nM30\n%0 \nG0Y0.0 \nG01Z-4.99F300\nG01Y15"], "time": 0.0931}, "poll_time": 0.0932}), qos=1)
-                    # result.wait_for_publish()
-
-
-                time.sleep(1)
+                if self.connected and self.event_queue.empty() is False:
+                    for i in range(self.event_queue.qsize()):
+                        result =self.client.publish(TOPIC, json.dumps(self.event_queue.get_nowait()), qos=1)
+                        result.wait_for_publish()
+                time.sleep(0.1)
          except Exception as e:
             logging.error(f"Failed to connecte mqtt broker: {e}")
          except Exception as e:
