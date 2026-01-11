@@ -39,6 +39,7 @@ class Machine(mp.Process):
                 if result.get('get_cnc_programe',{}).get('program',None):
                     with self.lock:
                         self.event_queue.put_nowait(result)
+                    logging.info(result)
                 start_time = time.time()
                 while time.time() - start_time < 1:
                     pass

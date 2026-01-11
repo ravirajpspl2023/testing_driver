@@ -39,16 +39,6 @@ class MqttSender(threading.Thread):
     def on_disconnect(self, client, userdata, flags, reason_code, properties=None):
         logging.warning(f"Disconnected from server MQTT broker {MQTT_HOST}")
         self.connected = False
-    
-    def publish_data(self,data):
-        logging.info(f"Publishing data to topic  {data}")
-        if not self.connected:
-            logging.warning("MQTT client is not connected. Cannot publish data.")
-            return
-        result = self.client.publish(TOPIC,json.dumps(data),qos=1)
-        logging.info(f"result: {result}")
-        result.wait_for_publish()
-        logging.info(f"Published data to topic {TOPIC}: {data}")
 
     def run(self):
          logging.info("Creating mqtt client instance")      
