@@ -31,7 +31,7 @@ class Machine(mp.Process):
         self.start()  # Safe now
     def run(self) -> None:
         pid = os.getpid()
-        self.driver = FocasDriver(self.ip,self.port,self.timeout,self.mqtt_sender)
+        self.driver = FocasDriver(self.ip,self.port,self.timeout,self.event_queue)
         try:
             handle = self.driver.connect()
             while True:

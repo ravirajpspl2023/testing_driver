@@ -10,6 +10,7 @@ from functools import partial
 from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
+from multiprocessing import Queue
 import logging
 from humac_driver.const import *
 
@@ -39,14 +40,15 @@ if sys.platform == 'linux':
         fwlib= None
 
 class BlockThread(threading.Thread):
-    def __init__(self,  ip,port,timeout=10,mqtt_sender=None):
+    def __init__(self,  ip,port,timeout=10,event_queue= Queue):
         super().__init__()
         self.ip = ip
         self.port = port
         self.timeout = timeout
         self.handle = None
-        self.mqtt_sender = mqtt_sender
         self._stop_event = threading.Event()
+        self.Lock = threading.Lock()
+        self.event_queue = event_queue
         self.previous_block = -1
         self.blk_no = c_long()
         self.start()
@@ -107,6 +109,8 @@ class BlockThread(threading.Thread):
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
                     gcode_data['program_No'] = CNC.PROGRAME_ONUMBER 
+                    with self.Lock:
+                        self.event_queue.put_nowait(gcode_data)
                     # self.mqtt_sender.publish_data(gcode_data)
                     logging.info(f"BlockThread gcode_data: {gcode_data}")
                     self.previous_block = self.blk_no.value
