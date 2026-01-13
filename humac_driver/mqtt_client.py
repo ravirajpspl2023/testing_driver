@@ -55,17 +55,22 @@ class MqttSender(threading.Thread):
             self._client_connect()
             self.client.loop_start()
             while self.running:
-                if self.connected and not self.event_queue.empty():
-                    for i in range(self.event_queue.qsize()):
-                        with self.lock:
-                            result =self.client.publish(TOPIC_PRO, json.dumps(self.event_queue.get()), qos=1)
-                            result.wait_for_publish()
+                try:
+                    if self.connected and not self.event_queue.empty():
+                        for i in range(self.event_queue.qsize()):
+                            with self.lock:
+                                result =self.client.publish(TOPIC_PRO, json.dumps(self.event_queue.get()), qos=1)
+                                result.wait_for_publish()
 
-                if self.connected and not self.block_queue.empty():
-                    for i in range(self.block_queue.qsize()):
-                        with self.lock:
-                            result =self.client.publish(TOPIC_BLK, json.dumps(self.block_queue.get()), qos=1)
-                            result.wait_for_publish()
+                    if self.connected and not self.block_queue.empty():
+                        for i in range(self.block_queue.qsize()):
+                            with self.lock:
+                                result =self.client.publish(TOPIC_BLK, json.dumps(self.block_queue.get()), qos=1)
+                                result.wait_for_publish()
+                except Exception as e :
+                    if self.connected is False:
+                        self._client_connect()
+                        time.sleep(5)
                 time.sleep(0.1)
          except Exception as e:
             logging.error(f"Failed to connecte mqtt broker: {e}")

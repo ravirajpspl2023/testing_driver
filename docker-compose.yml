@@ -11,6 +11,11 @@ services:
     network_mode: host
     volumes:
       - ./:/humac
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
 
 #   redis:
 #     image: redis:7-alpine
