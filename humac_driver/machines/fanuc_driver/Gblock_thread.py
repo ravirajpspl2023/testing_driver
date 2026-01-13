@@ -109,6 +109,7 @@ class BlockThread(threading.Thread):
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
                     gcode_data['program_No'] = CNC.PROGRAME_ONUMBER 
+                    gcode_data['edgeid'] = EDGE_ID
                     with self.Lock:
                         self.block_queue.put(gcode_data)
                     logging.info(f"BlockThread gcode_data: {gcode_data}")

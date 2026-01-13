@@ -2,6 +2,7 @@ import multiprocessing as mp
 import threading
 from humac_driver.machines.fanuc_driver.focas_driver import FocasDriver
 from humac_driver.mqtt_client import MqttSender
+from humac_driver.const import *
 from multiprocessing import Queue
 import os
 import time
@@ -39,6 +40,7 @@ class Machine(mp.Process):
                 result = self.driver.poll(handle)
                 if result.get('get_cnc_programe',{}).get('program',None):
                     with self.lock:
+                        result['edgeid'] = EDGE_ID
                         self.event_queue.put(result)
                     # self.mqtt_sender.publish_data(result)
                     logging.info(result)
