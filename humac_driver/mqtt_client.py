@@ -43,8 +43,11 @@ class MqttSender(threading.Thread):
         logging.warning(f"Disconnected from server MQTT broker {MQTT_HOST}")
         self.connected = False
     def publish_data(self, payload):
-            result =self.client.publish(TOPIC, json.dumps(payload), qos=1)
-            result.wait_for_publish()
+            try :
+                result =self.client.publish(TOPIC, json.dumps(payload), qos=1)
+                result.wait_for_publish()
+            except Exception as e:
+                logging.error(f"Failed to publish data to mqtt broker: {e}")
 
     def run(self):
          logging.info("Creating mqtt client instance")      
@@ -57,7 +60,7 @@ class MqttSender(threading.Thread):
                         with self.lock:
                             result =self.client.publish(TOPIC, json.dumps(self.event_queue.get()), qos=1)
                             result.wait_for_publish()
-                            
+
                 if self.connected and not self.block_queue.empty():
                     for i in range(self.block_queue.qsize()):
                         with self.lock:
