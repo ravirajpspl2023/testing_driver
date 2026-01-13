@@ -61,7 +61,7 @@ class MqttSender(threading.Thread):
                             result =self.client.publish(TOPIC, json.dumps(self.block_queue.get()), qos=1)
                             result.wait_for_publish()
                 else:
-                    logging.info(f"event_queue: {self.connected},{self.event_queue.empty()}")
+                    logging.info(f"block_queue: {self.connected},{self.block_queue.empty()}")
                 time.sleep(0.1)
          except Exception as e:
             logging.error(f"Failed to connecte mqtt broker: {e}")
