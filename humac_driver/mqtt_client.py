@@ -57,8 +57,7 @@ class MqttSender(threading.Thread):
                         with self.lock:
                             result =self.client.publish(TOPIC, json.dumps(self.event_queue.get()), qos=1)
                             result.wait_for_publish()
-                else:
-                    logging.info(f"event_queue: {self.connected},{self.event_queue.empty()}")
+                            
                 if self.connected and not self.block_queue.empty():
                     for i in range(self.block_queue.qsize()):
                         with self.lock:
