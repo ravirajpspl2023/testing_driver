@@ -1,3 +1,4 @@
+from unittest import result
 import paho.mqtt.client as mqtt
 from humac_driver.const import *
 from multiprocessing import Queue
@@ -41,6 +42,9 @@ class MqttSender(threading.Thread):
     def on_disconnect(self, client, userdata, flags, reason_code, properties=None):
         logging.warning(f"Disconnected from server MQTT broker {MQTT_HOST}")
         self.connected = False
+    def publish_data(self, payload):
+            result =self.client.publish(TOPIC, json.dumps(payload), qos=1)
+            result.wait_for_publish()
 
     def run(self):
          logging.info("Creating mqtt client instance")      
@@ -60,8 +64,6 @@ class MqttSender(threading.Thread):
                         with self.lock:
                             result =self.client.publish(TOPIC, json.dumps(self.block_queue.get()), qos=1)
                             result.wait_for_publish()
-                else:
-                    logging.info(f"block_queue: {self.connected},{self.block_queue.empty()}")
                 time.sleep(0.1)
          except Exception as e:
             logging.error(f"Failed to connecte mqtt broker: {e}")
