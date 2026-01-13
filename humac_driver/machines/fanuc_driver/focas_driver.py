@@ -40,14 +40,14 @@ if sys.platform == 'linux':
 
 
 class FocasDriver(object):
-    def __init__(self,ip,port,timeout=10,event_queue=Queue):
+    def __init__(self,ip,port,timeout=10,block_queue=Queue):
         self.ip = ip
         self.port = port
         self.timeout = timeout
         self.handle = None
         self.previous_program_number = None
         self.previous_date = None
-        self.block_thread = BlockThread(ip, port, timeout,event_queue) 
+        self.block_thread = BlockThread(ip, port, timeout,block_queue) 
     
     def connect(self,):
         start_time = time.time()

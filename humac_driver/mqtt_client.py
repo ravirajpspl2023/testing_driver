@@ -7,11 +7,13 @@ import logging
 import threading
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 class MqttSender(threading.Thread):
-    def __init__(self,event_queue=Queue):
+    def __init__(self,event_queue=Queue,bloack_queue=Queue):
         threading.Thread.__init__(self)
         self.running = True
         self.connected = False
+        self.lock = threading.Lock()
         self.event_queue = event_queue
+        self.block_queue = bloack_queue
         self.start()
         
     def _client_connect(self):
@@ -48,8 +50,14 @@ class MqttSender(threading.Thread):
             while self.running:
                 if self.connected and not self.event_queue.empty():
                     for i in range(self.event_queue.qsize()):
-                        result =self.client.publish(TOPIC, json.dumps(self.event_queue.get_nowait()), qos=1)
-                        result.wait_for_publish()
+                        with self.lock:
+                            result =self.client.publish(TOPIC, json.dumps(self.event_queue.get()), qos=1)
+                            result.wait_for_publish()
+                if self.connected and not self.block_queue.empty():
+                    for i in range(self.block_queue.qsize()):
+                        with self.lock:
+                            result =self.client.publish(TOPIC, json.dumps(self.block_queue.get()), qos=1)
+                            result.wait_for_publish()
                 time.sleep(0.1)
          except Exception as e:
             logging.error(f"Failed to connecte mqtt broker: {e}")

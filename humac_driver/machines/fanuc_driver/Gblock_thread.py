@@ -40,7 +40,7 @@ if sys.platform == 'linux':
         fwlib= None
 
 class BlockThread(threading.Thread):
-    def __init__(self,  ip,port,timeout=10,event_queue= Queue):
+    def __init__(self,  ip,port,timeout=10,block_queue= Queue):
         super().__init__()
         self.ip = ip
         self.port = port
@@ -48,7 +48,7 @@ class BlockThread(threading.Thread):
         self.handle = None
         self._stop_event = threading.Event()
         self.Lock = threading.Lock()
-        self.event_queue = event_queue
+        self.block_queue = block_queue
         self.previous_block = -1
         self.blk_no = c_long()
         self.start()
@@ -110,7 +110,7 @@ class BlockThread(threading.Thread):
                     gcode_data['block_No'] = self.blk_no.value
                     gcode_data['program_No'] = CNC.PROGRAME_ONUMBER 
                     with self.Lock:
-                        self.event_queue.put_nowait(gcode_data)
+                        self.block_queue.put(gcode_data)
                     logging.info(f"BlockThread gcode_data: {gcode_data}")
                     self.previous_block = self.blk_no.value
 
