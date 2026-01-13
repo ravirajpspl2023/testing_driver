@@ -10,6 +10,7 @@ from humac_driver.machines.fanuc_driver.Exceptions import *
 from humac_driver.machines.fanuc_driver.Gblock_thread import BlockThread
 import datetime
 import logging
+from  multiprocessing  import Queue
 from humac_driver.const import *
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -39,14 +40,14 @@ if sys.platform == 'linux':
 
 
 class FocasDriver(object):
-    def __init__(self,ip,port,timeout=10,mqtt_sender=None):
+    def __init__(self,ip,port,timeout=10,block_queue=Queue):
         self.ip = ip
         self.port = port
         self.timeout = timeout
         self.handle = None
         self.previous_program_number = None
         self.previous_date = None
-        self.block_thread = BlockThread(ip, port, timeout,mqtt_sender) 
+        self.block_thread = BlockThread(ip, port, timeout,block_queue) 
     
     def connect(self,):
         start_time = time.time()
