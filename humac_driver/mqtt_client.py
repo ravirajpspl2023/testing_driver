@@ -44,7 +44,7 @@ class MqttSender(threading.Thread):
         self.connected = False
     def publish_data(self, payload):
             try :
-                result =self.client.publish(TOPIC, json.dumps(payload), qos=1)
+                result =self.client.publish(TOPIC_PRO, json.dumps(payload), qos=1)
                 result.wait_for_publish()
             except Exception as e:
                 logging.error(f"Failed to publish data to mqtt broker: {e}")
