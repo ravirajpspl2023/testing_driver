@@ -22,24 +22,21 @@ class Machine(mp.Process):
         self.ip = ip
         self.port = port
         self.timeout = timeout
-        self.event_queue = Queue(maxsize=1024000)
-        self.block_queue = Queue(maxsize=1024000)
         self.lock = threading.Lock()
-        self.mqtt_sender = MqttSender(self.event_queue, self.block_queue)
+        self.mqtt_sender = MqttSender()
         self.edgeid = edgeId
         self.driver = None
         logging.info(f"Starting machine with {edgeId}") 
         self.start()  # Safe now
     def run(self) -> None:
         pid = os.getpid()
-        self.driver = FocasDriver(self.ip,self.port,self.timeout,self.block_queue)
+        self.driver = FocasDriver(self.ip,self.port,self.timeout,self.mqtt_sender)
         try:
             handle = self.driver.connect()
             while True:
                 result = self.driver.poll(handle)
                 if result.get('get_cnc_programe',{}).get('program',None):
-                    with self.lock:
-                        self.event_queue.put(result)
+                    self.mqtt_sender.publish_data(result)
                     logging.info(result)
                 start_time = time.time()
                 while time.time() - start_time < 1:
