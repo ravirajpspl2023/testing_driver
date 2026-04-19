@@ -1,0 +1,19 @@
+FROM arm32v7/python:3.9-slim
+
+# Install dependencies (same as Ladder99 likely uses)
+RUN apt-get update && apt-get install -y \
+    libc6-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy FOCAS libraries
+# COPY libfwlib32-linux-armv7.so.1.0.5 /usr/lib/
+# RUN ln -s /usr/lib/libfwlib32-linux-armv7.so.1.0.5 /usr/lib/libfwlib32.so
+WORKDIR /humac
+COPY . /humac
+
+RUN ldconfig
+
+RUN  pip install -r requirements.txt
+
+CMD ["python", "main.py"]
