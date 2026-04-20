@@ -114,5 +114,5 @@ class MqttPublisher(Process):
             self.stop()
             self.logger.info(f"Process {self.name} stopped cleanly")
 
-    def stop(self):
+    def terminate(self):
         self._stop_event.set()

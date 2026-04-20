@@ -11,7 +11,6 @@ MQTT_HOST = "216.48.182.104"
 MQTT_PORT = 1883
 TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
-
 MQTT_PASS = None
 
 config = {
