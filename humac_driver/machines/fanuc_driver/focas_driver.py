@@ -2,6 +2,7 @@ import sys
 import ctypes
 from ctypes.util import find_library
 from ctypes import *
+import json
 import time 
 from functools import partial
 from typing import  Dict, Any
@@ -123,14 +124,14 @@ class FocasDriver(object):
 
                     buf = create_string_buffer(CNC.MAX_BLOCK)
                     length = c_long(CNC.MAX_BLOCK) 
-                    
+
                     ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
                     logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
                     if (ret_upload == 0 or ret_upload == -2) and length.value > 0:
                         block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
                         program_content.append(block)
                         if len(program_content) >=3 or ret_upload == -2 :
-                            data['program'] = program_content
+                            data['program'] = json.dumps(program_content)
                             self.redis.xadd("program",data)
                             logging.info(f"Program data sent to Redis {data}")
                             program_content = []
