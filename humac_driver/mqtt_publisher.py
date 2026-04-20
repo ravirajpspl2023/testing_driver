@@ -97,10 +97,10 @@ class MqttPublisher(Process):
                                 if fields.get('program'):
                                     fields['program'] = json.loads(fields.get('program'))
                                 self.logger.info(f"fields:{fields}")
-                                # while not self._publish(fields):
-                                #     time.sleep(10)
-                                # self.redis.xack(self.stream, self.group_name, msg_id)
-                                # self.redis.xdel(self.stream, msg_id)
+                                while not self._publish(fields):
+                                    time.sleep(10)
+                                self.redis.xack(self.stream, self.group_name, msg_id)
+                                self.redis.xdel(self.stream, msg_id)
                     else:
                         time.sleep(0.1)
                         
