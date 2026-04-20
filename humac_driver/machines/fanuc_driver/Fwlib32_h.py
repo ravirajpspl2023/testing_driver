@@ -30,7 +30,7 @@ class CNC_CONF:
     CURRENT_PATH = None
     PROGRAME_NAME = ""
     PROGRAME_ONUMBER = ""
-    MAX_BLOCK = 3840
+    MAX_BLOCK = 2048
     
 CNC = CNC_CONF()
 
