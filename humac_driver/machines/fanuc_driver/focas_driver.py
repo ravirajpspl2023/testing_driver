@@ -121,7 +121,7 @@ class FocasDriver(object):
                 program_content = []
                 chunk = 0
                 while True:
-                    time.sleep(0.5)
+                    time.sleep(0.2)
 
                     buf = create_string_buffer(CNC.MAX_BLOCK)
                     length = c_long(CNC.MAX_BLOCK) 
@@ -131,12 +131,12 @@ class FocasDriver(object):
                     if ret_upload == 0  and length.value > 0:
                         block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
                         program_content.append(block)
-                        if len(program_content) >=5:
+                        if len(program_content) >=6:
                             chunk += 1
                             data['chunk'] = chunk
                             data['program'] = json.dumps(program_content)
                             self.redis.xadd("program",data)
-                            logging.info(f"Program data sent to Redis {data}")
+                            logging.info(f"chunk {chunk} sent to Redis ")
                             program_content = []
                     elif ret_upload == -2:
                         if program_content:
@@ -144,7 +144,7 @@ class FocasDriver(object):
                             data['chunk'] = chunk
                             data['program'] = json.dumps(program_content)
                             self.redis.xadd("program",data)
-                            logging.info(f"Final program data sent to Redis {data}")
+                            logging.info(f"Final program chunk {chunk} sent to Redis ")
                         break
 
                     elif ret_upload != 0 and ret_upload != -2:
