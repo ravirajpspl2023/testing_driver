@@ -13,6 +13,7 @@ MQTT_PORT = 1883
 TOPIC_PRO = "humac/telemetry_cnc/programe"
 TOPIC_BLK = "humac/telemetry_cnc/block"
 MQTT_PASS = None
+MQTT_CLI = "SEWVMC1100"
 
 config = {
         "machines":[

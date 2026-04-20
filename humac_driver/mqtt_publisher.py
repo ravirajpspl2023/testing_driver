@@ -14,6 +14,7 @@ class MqttPublisher(Process):
         self.logger = logging.getLogger(f"{self.name}_pub")
         self.redis=  RedisConnection(stream).connect()
         self.group_name = "HumacDriver"
+        self.mqtt_client = f"{MQTT_CLI}_{stream}"
         self._stop_event = Event()
         if self.stream == "program":
             self.mqtt_topic = TOPIC_PRO
@@ -65,7 +66,7 @@ class MqttPublisher(Process):
     def _connect(self):
         try:
             self.client = mqtt.Client( mqtt.CallbackAPIVersion.VERSION2,
-                                    clean_session=True,reconnect_on_failure=True)
+                                   client_id= self.mqtt_client, clean_session=True,reconnect_on_failure=True)
             if MQTT_PASS is not None:
                 self.password = MQTT_PASS.encode('utf-8')
             self.client.username_pw_set(MQTT_PASS, self.password)
@@ -95,10 +96,11 @@ class MqttPublisher(Process):
                             for msg_id, fields in messages:
                                 if fields.get('program'):
                                     fields['program'] = json.loads(fields.get('program'))
-                                while not self._publish(fields):
-                                    time.sleep(10)
-                                self.redis.xack(self.stream, self.group_name, msg_id)
-                                self.redis.xdel(self.stream, msg_id)
+                                self.logger.info(f"fields:{fields}")
+                                # while not self._publish(fields):
+                                #     time.sleep(10)
+                                # self.redis.xack(self.stream, self.group_name, msg_id)
+                                # self.redis.xdel(self.stream, msg_id)
                     else:
                         time.sleep(0.1)
                         

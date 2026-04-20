@@ -2,7 +2,6 @@ import multiprocessing as mp
 import threading
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.focas_driver import FocasDriver
-from humac_driver.mqtt_client import MqttSender
 from humac_driver.const import *
 from multiprocessing import Queue
 import datetime
