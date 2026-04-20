@@ -130,9 +130,9 @@ class FocasDriver(object):
                         if len(program_content) >=3 or ret_upload == -2 : 
                             self.redis.xadd("program",data)
                             program_content = []
-                    elif ret_upload == -2:
-                        logging.info("program download completed .....")
-                        break
+                        if ret_upload == -2:
+                            logging.info("End of program reached.")
+                            break
                     elif ret_upload != 0 and ret_upload != -2:
                         logging.error(f"Upload failed with code: {ret_upload}")
                         break
