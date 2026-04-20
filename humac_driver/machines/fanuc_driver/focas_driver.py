@@ -119,6 +119,7 @@ class FocasDriver(object):
                     return
                 
                 program_content = []
+                chunk = 0
                 while True:
                     time.sleep(0.5)
 
@@ -127,17 +128,25 @@ class FocasDriver(object):
 
                     ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
                     logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
-                    if (ret_upload == 0 or ret_upload == -2) and length.value > 0:
+                    if ret_upload == 0  and length.value > 0:
                         block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
                         program_content.append(block)
-                        if len(program_content) >=3 or ret_upload == -2 :
+                        if len(program_content) >=3:
+                            chunk += 1
+                            data['chunk'] = chunk
                             data['program'] = json.dumps(program_content)
                             self.redis.xadd("program",data)
                             logging.info(f"Program data sent to Redis {data}")
                             program_content = []
-                        if ret_upload == -2:
-                            logging.info("End of program reached.")
-                            break
+                    elif ret_upload == -2:
+                        if program_content:
+                            chunk += 1
+                            data['chunk'] = chunk
+                            data['program'] = json.dumps(program_content)
+                            self.redis.xadd("program",data)
+                            logging.info(f"Final program data sent to Redis {data}")
+                        break
+
                     elif ret_upload != 0 and ret_upload != -2:
                         logging.error(f"Upload failed with code: {ret_upload}")
                         break
