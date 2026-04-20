@@ -12,6 +12,8 @@ MQTT_PORT = 1883
 TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
 
+MQTT_PASS = None
+
 config = {
         "machines":[
            {"fanuc":{"ip":"192.168.0.2", "port":8193,"timeout":5,"edgid" :"ed4200015" , "machineid":"SEWVMC1100"}},

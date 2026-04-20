@@ -6,6 +6,7 @@ import logging
 from functools import partial
 from typing import  Dict, Any
 from humac_driver.const import *
+from humac_driver.mqtt_publisher import MqttPublisher
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -14,6 +15,7 @@ class HumacDriver(object):
         self.machines_list = config.get('machines',None)
         self.machines = []
         self.connecte_with_machine()
+        self.streams = ['program','block']
         # self.waiting()
 
     def connecte_with_machine(self,):
@@ -26,6 +28,10 @@ class HumacDriver(object):
                     elif machine == 'hass':
                         m=HassDriver(config)
                         self.machines.append(m)
+        for stream in self.streams:
+            mqtt_publisher = MqttPublisher(stream)
+            self.machines.append(mqtt_publisher)
+                
                 
     def waiting(self,):
         if self.machines:
