@@ -131,7 +131,7 @@ class FocasDriver(object):
                     if ret_upload == 0  and length.value > 0:
                         block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
                         program_content.append(block)
-                        if len(program_content) >=3:
+                        if len(program_content) >=5:
                             chunk += 1
                             data['chunk'] = chunk
                             data['program'] = json.dumps(program_content)
