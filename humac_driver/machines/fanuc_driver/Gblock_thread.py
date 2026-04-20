@@ -10,6 +10,7 @@ from functools import partial
 from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
+from humac_driver.database.redis_client import RedisConnection
 from multiprocessing import Queue
 import logging
 from humac_driver.const import *
@@ -40,7 +41,7 @@ if sys.platform == 'linux':
         fwlib= None
 
 class BlockThread(threading.Thread):
-    def __init__(self,config,block_queue=Queue):
+    def __init__(self,config):
         super().__init__()
         self.ip = config['ip']
         self.port = config['port']
@@ -48,8 +49,7 @@ class BlockThread(threading.Thread):
         self.edgeid = config['edgid']
         self.handle = None
         self._stop_event = threading.Event()
-        self.Lock = threading.Lock()
-        self.block_queue = block_queue
+        self.redis=  RedisConnection("block").connect()
         self.previous_block = -1
         self.blk_no = c_long()
         self.start()
@@ -98,7 +98,6 @@ class BlockThread(threading.Thread):
 
         fanuc = fwlib.cnc_rdblkcount
         fanuc.restype = c_short
-        # blk_no = c_long()
         result = fanuc(self.handle,byref(self.blk_no))
         
         # fanuc = fwlib.cnc_rdactpt
@@ -122,9 +121,8 @@ class BlockThread(threading.Thread):
                     gcode_data['block_No'] = self.blk_no.value
                     gcode_data['program_No'] = CNC.PROGRAME_NAME 
                     gcode_data['edgeid'] = self.edgeid
-                    with self.Lock:
-                        self.block_queue.put(gcode_data)
                     self.previous_block = self.blk_no.value
+                    self.redis.xadd("block",gcode_data)
 
     def stop(self):
         if self.handle != -16 or self.handle is not None:

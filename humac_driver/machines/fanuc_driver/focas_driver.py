@@ -8,7 +8,7 @@ from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
 from humac_driver.machines.fanuc_driver.Gblock_thread import BlockThread
-# from humac_driver.database.redis_client import RedisConnection
+from humac_driver.database.redis_client import RedisConnection
 import threading
 import datetime
 import logging
@@ -42,18 +42,17 @@ if sys.platform == 'linux':
 
 
 class FocasDriver(object):
-    def __init__(self,config,block_queue=Queue ,event_queue=Queue):
+    def __init__(self,config):
         self.ip = config['ip']
         self.port = config['port']
         self.timeout = config['timeout']
         self.handle = None
         self.previous_program_number = None
         self.edgeid = config['edgid']
-        # self.redis=  RedisConnection("program").connect()
+        self.redis=  RedisConnection("program").connect()
         self.previous_date = None
         self.lock = threading.Lock()
-        self.block_thread = BlockThread(config,block_queue) 
-        self.event_queue = event_queue
+        self.block_thread = BlockThread(config) 
         self.connect()
     
     def connect(self,):
@@ -93,10 +92,10 @@ class FocasDriver(object):
 
     def get_cnc_programe(self,):
         try:
-            data = {"ts": time.time_ns() // 1_000_000}
-            start_time = time.perf_counter()
-            program_content = []
-
+            data = {"ts": time.time_ns() // 1_000_000,
+                    "name": CNC.PROGRAME_NAME,
+                    "edgeid": self.edgeid}
+            
             fanuc = fwlib.cnc_pdf_rdmain
             fanuc.restype = c_short
             buf = ctypes.create_string_buffer(244)
@@ -114,52 +113,41 @@ class FocasDriver(object):
                 # cnc_upstart4
                 ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
                 logging.info(f'upstart result is {ret_upstart}')
-                
+
                 if ret_upstart != 0:
                     logging.error(f"Upstart failed: {ret_upstart}")
-                    return data
-                chunk = 0
+                    return
+
                 while True:
-                    time.sleep(0.5)  # Avoid tight loop
-                    MAX_BLOCK = 4096  # Increase size (safe)
-                    buf = create_string_buffer(MAX_BLOCK)
-                    length = c_long(MAX_BLOCK)  # Reset each time
+                    data ["chunk"] += 1
+                    buf = create_string_buffer(CNC.MAX_BLOCK)
+                    length = c_long(CNC.MAX_BLOCK) 
                     ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
                     logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
-
-                    if ret_upload == 0:  # Success, data present
-                        if length.value > 0:
-                            block = buf.raw.decode('utf-8').strip('\x00')
-                            program_content.append(block)
-                            # logging.info(f"Block read: {block}")  # Partial log
-                        else:
-                            # length 0 pan 0 return → possible end or empty
-                            logging.warning("Zero bytes read but return 0 – possible end?")
-                            break
-                    else:
-                        logging.error(f"Upload error: {ret_upload}")
-                        break
-                    if len(program_content) >= 3 and ret_upload != -2:
-                        chunk += 1  
+                    if ret_upload == 0 and length.value > 0:
+                        block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
+                        data['program'] = [block]
                         with self.lock:
-                            data['name'] = CNC.PROGRAME_NAME
-                            data['program'] = program_content
-                            data['edgeid'] = self.edgeid
-                            data['chunk'] = chunk
-                            self.event_queue.put(data)
-                        program_content = []
+                            self.redis.xadd("program",data)
+                    elif ret_upload == -2:
+                        logging.info("program download completed .....")
+                        break
+                    elif ret_upload != 0 and ret_upload != -2:
+                        logging.error(f"Upload failed with code: {ret_upload}")
+                        break
+
+                    time.sleep(0.2)
 
                 ret_end = fwlib.cnc_upend4(self.handle)
                 logging.info(f"upend4 result: {ret_end}")
 
-            data['name'] = CNC.PROGRAME_NAME
-            data['program'] = program_content
-            data['time'] = round(time.perf_counter() - start_time, 4)
+            # data['name'] = CNC.PROGRAME_NAME
+            # data['program'] = program_content
+            # data['time'] = round(time.perf_counter() - start_time, 4)
         
         except Exception as e:
             logging.error(f"Error in get_cnc_programe: {e}")
         
-        return data
     
     def get_cnc_program_detais(self,):
         data = {"ts": time.time_ns() // 1_000_000}
@@ -170,6 +158,15 @@ class FocasDriver(object):
         odbpro = ODBPRO()
         result = fanuc(self.handle,byref(odbpro))
         data.update(odbpro.__dict__)
+
+        if data.get('mdata') == 0:
+            func = fwlib.cnc_exeprgname
+            func.restype = c_short
+            programe = ODBEXEPRG()
+            result = func(self.handle, byref(programe))
+            programe.__dict__
+            data['mdata'] = CNC.PROGRAME_NAME
+
         data['time'] = time.perf_counter()-start_time
         return data
            
@@ -187,12 +184,10 @@ class FocasDriver(object):
         return func()
     
     def poll(self,) -> Dict[str, Any]:
-            results = {}
-            start_time= time.perf_counter()
+            
             for method in self._get_poll_methods():
-                results[method.__name__] = method()
-            results['poll_time'] = round(time.perf_counter() - start_time,4)
-            return results
+                # results[method.__name__] = method()
+                method()
     
             # methods = self._get_poll_methods()
             # method_names = [m.__name__ for m in methods]
