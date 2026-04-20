@@ -14,7 +14,7 @@ TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
 
 config = {
         "machines":[
-           {"fanuc":{"ip":"192.168.0.2", "port":8193,"timeout":5,"edgid" :"e420004" , "machineid":"CNC004"}},
+           {"fanuc":{"ip":"192.168.0.2", "port":8193,"timeout":5,"edgid" :"ed4200016" , "machineid":"ZTPLVMC01"}},
          #   {"hass":{"ip":"192.168.0.2", "port":8082,"timeout":5,"edgid" :"ed4200022" , "machineid":"SACNC02"}},
         ]
     }
