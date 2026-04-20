@@ -119,7 +119,7 @@ class FocasDriver(object):
                     return
 
                 while True:
-                    data ["chunk"] += 1
+                    
                     buf = create_string_buffer(CNC.MAX_BLOCK)
                     length = c_long(CNC.MAX_BLOCK) 
                     ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
