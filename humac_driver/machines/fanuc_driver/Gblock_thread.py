@@ -80,7 +80,7 @@ class BlockThread(threading.Thread):
             result = func(ip_bytes, self.port, self.timeout, byref(handle)) 
            # FocasExceptionRaiser(result, context=self)
            
-            if result == -16:
+            if result != 0 :
                 time.sleep(10)  # Wait a moment before retrying
                 self.connect() 
             elapsed = time.time() - start_time
@@ -105,7 +105,7 @@ class BlockThread(threading.Thread):
         # fanuc.restype = c_short
         # result = fanuc(self.handle,byref(self.prog_no),byref(self.blk_no))
 
-        if result == -16 :
+        if result != 0 :
             self.connect()
             time.sleep(0.1)
 

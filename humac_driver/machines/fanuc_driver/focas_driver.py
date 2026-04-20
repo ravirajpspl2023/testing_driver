@@ -8,6 +8,7 @@ from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
 from humac_driver.machines.fanuc_driver.Gblock_thread import BlockThread
+from humac_driver.database.redis_client import RedisConnection
 import threading
 import datetime
 import logging
@@ -48,10 +49,12 @@ class FocasDriver(object):
         self.handle = None
         self.previous_program_number = None
         self.edgeid = config['edgid']
+        self.redis=  RedisConnection("program").connect()
         self.previous_date = None
         self.lock = threading.Lock()
         self.block_thread = BlockThread(config,block_queue) 
         self.event_queue = event_queue
+        self.connect()
     
     def connect(self,):
         start_time = time.time()
@@ -77,15 +80,18 @@ class FocasDriver(object):
             ip_bytes = self.ip.encode('utf-8')
             handle = c_ushort(0)            
             result = func(ip_bytes, self.port, self.timeout, byref(handle)) 
+
             elapsed = time.time() - start_time
 
-            if result == -16:
+            if result != 0 :
                 time.sleep(10)  # Wait a moment before retrying
                 self.connect()
             logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
-        return handle.value
 
-    def get_cnc_programe(self, handle):
+            self.handle = handle.value
+        
+
+    def get_cnc_programe(self,):
         try:
             data = {"ts": time.time_ns() // 1_000_000}
             start_time = time.perf_counter()
@@ -94,7 +100,7 @@ class FocasDriver(object):
             fanuc = fwlib.cnc_pdf_rdmain
             fanuc.restype = c_short
             buf = ctypes.create_string_buffer(244)
-            result = fanuc(handle,byref(buf))
+            result = fanuc(self.handle,byref(buf))
             
             if result == 0 :
                 # logging.info(f"result: {result} value: {buf.value}")
@@ -106,7 +112,7 @@ class FocasDriver(object):
                 name_ptr = ctypes.create_string_buffer(name_bytes)
                 
                 # cnc_upstart4
-                ret_upstart = fwlib.cnc_upstart4(handle, 0, name_ptr)  # No extra arg
+                ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
                 logging.info(f'upstart result is {ret_upstart}')
                 
                 if ret_upstart != 0:
@@ -118,7 +124,7 @@ class FocasDriver(object):
                     MAX_BLOCK = 4096  # Increase size (safe)
                     buf = create_string_buffer(MAX_BLOCK)
                     length = c_long(MAX_BLOCK)  # Reset each time
-                    ret_upload = fwlib.cnc_upload4(handle, byref(length), buf)     
+                    ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
                     logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
 
                     if ret_upload == 0:  # Success, data present
@@ -143,7 +149,7 @@ class FocasDriver(object):
                             self.event_queue.put(data)
                         program_content = []
 
-                ret_end = fwlib.cnc_upend4(handle)
+                ret_end = fwlib.cnc_upend4(self.handle)
                 logging.info(f"upend4 result: {ret_end}")
 
             data['name'] = CNC.PROGRAME_NAME
@@ -155,14 +161,14 @@ class FocasDriver(object):
         
         return data
     
-    def get_cnc_program_detais(self,handle):
+    def get_cnc_program_detais(self,):
         data = {"ts": time.time_ns() // 1_000_000}
         # self.getProgramName(handle)
         start_time= time.perf_counter()
         fanuc = fwlib.cnc_rdprgnum
         fanuc.restype = c_short
         odbpro = ODBPRO()
-        result = fanuc(handle,byref(odbpro))
+        result = fanuc(self.handle,byref(odbpro))
         data.update(odbpro.__dict__)
         data['time'] = time.perf_counter()-start_time
         return data
@@ -180,11 +186,11 @@ class FocasDriver(object):
         """Helper function jo pickle ho sakta hai"""
         return func()
     
-    def poll(self, handle) -> Dict[str, Any]:
+    def poll(self,) -> Dict[str, Any]:
             results = {}
             start_time= time.perf_counter()
             for method in self._get_poll_methods():
-                results[method.__name__] = method(handle)
+                results[method.__name__] = method()
             results['poll_time'] = round(time.perf_counter() - start_time,4)
             return results
     

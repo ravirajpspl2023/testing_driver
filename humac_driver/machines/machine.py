@@ -35,34 +35,33 @@ class Machine(mp.Process):
     def run(self) -> None:
         pid = os.getpid()
         self.driver = FocasDriver(self.config,self.block_queue,self.event_queue)
-        try:
-            handle = self.driver.connect()            
+        try:           
             while True:
-                data = self.driver.get_cnc_program_detais(handle)
+                data = self.driver.get_cnc_program_detais()
                 result = {}
                 start_time = time.time()
                 if self.MainProgram != data.get('mdata'):
                     self.main_program_run_time = time.time()
                     self.MainProgram =data.get('mdata')
-                    result = self.driver.poll(handle)
+                    result = self.driver.poll()
                     logging.info(f"download main program:{data.get('mdata')}")
                 if data.get('data') not in self.SubPgrogram and data.get('mdata') != data.get('data') :
                     self.SubPgrogram.append(data.get('data'))
-                    result = self.driver.poll(handle)
+                    result = self.driver.poll()
                     logging.info(f"download sub-program:{data.get('data')}")
                 if self.current_date !=  datetime.date.today() :
                     self.current_date = datetime.date.today()
-                    result = self.driver.poll(handle)
+                    result = self.driver.poll()
                     logging.info(f"Date changed: {self.current_date}")
                 if time.time()-self.main_program_run_time >= 14400:
                     self.main_program_run_time = time.time()
-                    result = self.driver.poll(handle)
+                    result = self.driver.poll()
                     logging.info(f'machine is ideal up to 4 h')
                 if result.get('get_cnc_programe',{}).get('program',None):
                     with self.lock:
                         result['edgeid'] = self.edgeid
                         self.event_queue.put(result)
-                while time.time()-start_time <= 0.5:
+                while time.time()-start_time <= 1:
                     pass
                 
         except Exception or  KeyboardInterrupt as e :
