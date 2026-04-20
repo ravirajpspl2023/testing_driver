@@ -139,7 +139,7 @@ class FocasDriver(object):
                         logging.error(f"Upload failed with code: {ret_upload}")
                         break
 
-                    time.sleep(0.2)
+                    time.sleep(0.5)
 
                 ret_end = fwlib.cnc_upend4(self.handle)
                 logging.info(f"upend4 result: {ret_end}")
