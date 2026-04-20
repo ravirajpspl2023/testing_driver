@@ -129,7 +129,7 @@ class FocasDriver(object):
                         program_content.append(block)
                         if len(program_content) >=3 or ret_upload == -2 : 
                             self.redis.xadd("program",data)
-                            logging.info(f"Program data sent to Redis")
+                            logging.info(f"Program data sent to Redis {data}")
                             program_content = []
                         if ret_upload == -2:
                             logging.info("End of program reached.")
