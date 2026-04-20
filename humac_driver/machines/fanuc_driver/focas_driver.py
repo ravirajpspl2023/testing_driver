@@ -119,9 +119,11 @@ class FocasDriver(object):
                 
                 program_content = []
                 while True:
+                    time.sleep(0.5)
 
                     buf = create_string_buffer(CNC.MAX_BLOCK)
                     length = c_long(CNC.MAX_BLOCK) 
+                    
                     ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
                     logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
                     if (ret_upload == 0 or ret_upload == -2) and length.value > 0:
@@ -138,8 +140,6 @@ class FocasDriver(object):
                     elif ret_upload != 0 and ret_upload != -2:
                         logging.error(f"Upload failed with code: {ret_upload}")
                         break
-
-                    time.sleep(0.5)
 
                 ret_end = fwlib.cnc_upend4(self.handle)
                 logging.info(f"upend4 result: {ret_end}")
