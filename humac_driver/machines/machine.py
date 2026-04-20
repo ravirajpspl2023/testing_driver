@@ -61,7 +61,7 @@ class Machine(mp.Process):
                     with self.lock:
                         result['edgeid'] = self.edgeid
                         self.event_queue.put(result)
-                while time.time()-start_time <= 1:
+                while time.time()-start_time <= 0.5:
                     pass
                 
         except Exception or  KeyboardInterrupt as e :
