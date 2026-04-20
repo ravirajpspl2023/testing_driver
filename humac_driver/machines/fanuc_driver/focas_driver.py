@@ -88,7 +88,6 @@ class FocasDriver(object):
             logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
 
             self.handle = handle.value
-        
 
     def get_cnc_programe(self,):
         try:
@@ -100,7 +99,7 @@ class FocasDriver(object):
             fanuc.restype = c_short
             buf = ctypes.create_string_buffer(244)
             result = fanuc(self.handle,byref(buf))
-            
+
             if result == 0 :
                 # logging.info(f"result: {result} value: {buf.value}")
                 # # Correct path – try without extra '/' or with 'MEMORY/' if DATA_SV fails
@@ -117,18 +116,20 @@ class FocasDriver(object):
                 if ret_upstart != 0:
                     logging.error(f"Upstart failed: {ret_upstart}")
                     return
-
+                
+                program_content = []
                 while True:
-                    
+
                     buf = create_string_buffer(CNC.MAX_BLOCK)
                     length = c_long(CNC.MAX_BLOCK) 
                     ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
                     logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
-                    if ret_upload == 0 and length.value > 0:
+                    if (ret_upload == 0 or ret_upload == -2) and length.value > 0:
                         block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
-                        data['program'] = [block]
-                        with self.lock:
+                        program_content.append(block)
+                        if len(program_content) >=3 or ret_upload == -2 : 
                             self.redis.xadd("program",data)
+                            program_content = []
                     elif ret_upload == -2:
                         logging.info("program download completed .....")
                         break
