@@ -86,7 +86,6 @@ class MTConnecte(mp.Process):
                             self.current_date = datetime.date.today()
                             self.program_event.put(result)
                             logging.info("date_change")
-                        logging.info(f"state:{self.program_state}")
                         if self.program_state == "ACTIVE" :
                             # self.program_previous_state = self.program_state
                             data = {"ts": time_ns() // 1_000_000 , 
