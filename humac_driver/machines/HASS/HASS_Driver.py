@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import threading
-from humac_driver.mqtt_client import MqttSender
 from humac_driver.machines.HASS.MT_Connecte import MTConnecte
+from humac_driver.database.redis_client import RedisConnection
 from humac_driver.const import *
 from multiprocessing import Queue
 import datetime
@@ -26,7 +26,7 @@ SMB_CLIENT   = "HumacPC"
 SMB_SERVER   = "HAASCNC"
 SMB_SHARE    = "Data"
 SMB_PORT     = 445
-CHUNK_LINES  = 50   # Fanuc sarkha buffer size
+CHUNK_LINES  = 100    # Fanuc sarkha buffer size
 
 
 class HassDriver(mp.Process):
@@ -40,13 +40,16 @@ class HassDriver(mp.Process):
         self.edgeid       = config['edgid']
         self.machineid    = config['machineid']
 
-        self.event_queue   = Queue(maxsize=204800)
-        self.block_queue   = Queue(maxsize=102400)
+        # self.event_queue   = Queue(maxsize=204800)
+        # self.block_queue   = Queue(maxsize=102400)
         self.program_event = Queue(maxsize=102400)
         self.lock          = threading.Lock()
 
-        self.mqtt_sender = MqttSender(self.machineid, self.event_queue, self.block_queue)
-        self.MT_connecte = MTConnecte(self.config, self.program_event,self.block_queue)
+        self.redis=  RedisConnection("program").connect()
+
+        # self.mqtt_sender = MqttSender(self.machineid, self.event_queue, self.block_queue)
+        # self.MT_connecte = MTConnecte(self.config, self.program_event,self.block_queue)
+        self.MT_connecte = MTConnecte(self.config, self.program_event)
 
         self.current_date = datetime.date.today()
         logging.info(f"Starting HASS with {self.edgeid}")
@@ -132,34 +135,39 @@ class HassDriver(mp.Process):
 
             # Chunk karo ani event_queue madhe put karo
             chunk_num = 0
+            data = {"ts": ts,
+                    "name": program_filename,
+                    "edgeid": self.edgeid}
             for start in range(0, total, CHUNK_LINES):
                 chunk_lines = all_lines[start: start + CHUNK_LINES]
                 chunk_num  += 1
+                data['chunk'] = chunk_num
+                data['program'] = json.dumps(["\n\r\r".join(chunk_lines)]),  # Fanuc sarkha single string
 
                 # Fanuc-style MQTT payload
-                payload = {
-                    "get_cnc_programe": {
-                        "ts":     ts,
-                        "name":    program_filename,
-                        "program": ["\n\r\r".join(chunk_lines)],  # Fanuc sarkha single string
-                        "edgeid":  self.edgeid,
-                        "chunk":   chunk_num,
-                        "time":    poll_time,
-                    },
-                    "poll_time": poll_time,
-                    "edgeid":    self.edgeid,
-                }
-
+                # payload = {
+                #     "get_cnc_programe": {
+                #         "ts":     ts,
+                #         "name":    program_filename,
+                #         "program": ["\n\r\r".join(chunk_lines)],  # Fanuc sarkha single string
+                #         "edgeid":  self.edgeid,
+                #         "chunk":   chunk_num,
+                #         "time":    poll_time,
+                #     },
+                #     "poll_time": poll_time,
+                #     "edgeid":    self.edgeid,
+                # }
                 with self.lock:
-                    if not self.event_queue.full():
-                        self.event_queue.put(payload)
-                    else:
-                        logging.warning(f"event_queue full — chunk {chunk_num} dropped")
+                    self.redis.xadd("program",data)
+                    # if not self.event_queue.full():
+                    #     self.event_queue.put(payload)
+                    # else:
+                    #     logging.warning(f"event_queue full — chunk {chunk_num} dropped")
 
-                logging.info(
-                    f"Chunk {chunk_num} queued "
-                    f"(lines {start+1}–{min(start+CHUNK_LINES, total)}/{total})"
-                )
+                # logging.info(
+                #     f"Chunk {chunk_num} queued "
+                #     f"(lines {start+1}–{min(start+CHUNK_LINES, total)}/{total})"
+                # )
                 sleep(0.05)
 
             logging.info(f"Published {chunk_num} chunks for: {program_filename}")

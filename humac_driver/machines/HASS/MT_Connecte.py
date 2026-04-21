@@ -4,13 +4,14 @@ from humac_driver.const import *
 import xml.etree.ElementTree as ET
 from multiprocessing import Queue
 import requests
+from humac_driver.database.redis_client import RedisConnection
 import datetime
 import os
 from time import time_ns,sleep ,time
 import logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 class MTConnecte(mp.Process):
-    def __init__(self,config,program_event:Queue,block_queue:Queue):
+    def __init__(self,config,program_event:Queue):
         super().__init__(name=config['edgid'], daemon=True)
         
         # Only store simple picklable data
@@ -21,7 +22,6 @@ class MTConnecte(mp.Process):
         self.edgeid = config['edgid']
         self.machineid = config['machineid']
         self.program_event = program_event
-        self.block_queue = block_queue
         self.lock = threading.Lock()
         logging.info(f"Starting MTconnecte {self.edgeid}") 
         self.url = f"http://{self.ip}:{self.port}/current"
@@ -29,6 +29,7 @@ class MTConnecte(mp.Process):
         self.downloaded_program = None
         self.last_downloaded = 0
         self.program_state = None
+        self.redis=  RedisConnection("block").connect()
         self.start()  # Safe now
 
     def fetch_cnc_data(self,url):
@@ -91,8 +92,8 @@ class MTConnecte(mp.Process):
                             data = {"ts": time_ns() // 1_000_000 , 
                                     "program_No": self.downloaded_program, 
                                     "edgeid": self.edgeid}
-                            self.block_queue.put(data)
-                            logging.info(f"state : {data}")
+                            self.redis.xadd("block",data)
+                            # logging.info(f"state : {data}")
                     sleep(2)
                 
         except (Exception, KeyboardInterrupt) as e:
