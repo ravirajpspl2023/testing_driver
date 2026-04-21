@@ -142,7 +142,7 @@ class HassDriver(mp.Process):
                 chunk_lines = all_lines[start: start + CHUNK_LINES]
                 chunk_num  += 1
                 data['chunk'] = chunk_num
-                data['program'] = json.dumps(["\n\r\r".join(chunk_lines)]),  # Fanuc sarkha single string
+                data['program'] = json.dumps(["\n\r\r".join(chunk_lines)])
 
                 # Fanuc-style MQTT payload
                 # payload = {
