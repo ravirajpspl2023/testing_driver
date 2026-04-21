@@ -10,8 +10,8 @@ FILE_NAME_LIN = "libfwlib32-linux-armv7.so.1.0.5"
 MQTT_HOST = "216.48.182.104"
 MQTT_PORT = 1883
 # TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
-TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
-TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
+TOPIC_PRO = "humac/telemetry_cnc/programe"
+TOPIC_BLK = "humac/telemetry_cnc/block"
 MQTT_PASS = None
 MQTT_CLI = "CNC004"
 
