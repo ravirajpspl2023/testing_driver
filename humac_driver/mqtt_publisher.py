@@ -1,4 +1,5 @@
 from multiprocessing import Process, Event
+import ast
 from humac_driver.database.redis_client import RedisConnection
 import paho.mqtt.client as mqtt
 import logging
@@ -94,10 +95,16 @@ class MqttPublisher(Process):
                     if msgs:
                         for stream, messages in msgs:
                             for msg_id, fields in messages:
-                                if fields.get('program'):
-                                    fields['program'] = json.loads(fields.get('program'))
-                                self.logger.info(f"fields:{fields}")
-                                while not self._publish(fields):
+                                # if fields.get('program'):
+                                #     fields['program'] = json.loads(fields.get('program'))
+                                data={}
+                                for key, value in fields.items():
+                                    str_key = key.decode() if isinstance(key, bytes) else key
+                                    str_val = value.decode() if isinstance(value, bytes) else value
+                                    data[str_key] = ast.literal_eval(str_val)
+
+                                self.logger.info(f"fields:{data}")
+                                while not self._publish(data):
                                     time.sleep(10)
                                 self.redis.xack(self.stream, self.group_name, msg_id)
                                 self.redis.xdel(self.stream, msg_id)
