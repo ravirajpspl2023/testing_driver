@@ -13,11 +13,11 @@ MQTT_PORT = 1883
 TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
 MQTT_PASS = None
-MQTT_CLI = "PICNC02"
+MQTT_CLI = "PICNC01"
 
 config = {
         "machines":[
-           {"fanuc":{"ip":"193.168.10.2", "port":8193,"timeout":5,"edgid" :"ed4200013" , "machineid":"PICNC02"}},
+           {"fanuc":{"ip":"193.168.10.2", "port":8193,"timeout":5,"edgid" :"ed4200012" , "machineid":"PICNC01"}},
           #  {"hass":{"ip":"192.168.0.2", "port":8082,"timeout":5,"edgid" :"ed4200022" , "machineid":"SACNC02"}},
         ]
     }
