@@ -17,7 +17,7 @@ MQTT_CLI = "SACNC02"
 
 config = {
         "machines":[
-           {"fanuc":{"ip":"193.168.10.2", "port":8193,"timeout":5,"edgid" :"ed4200012" , "machineid":"PICNC01"}},
+           {"fanuc":{"ip":"193.168.10.2", "port":8193,"timeout":5,"edgid" :"ed4200013" , "machineid":"PICNC02"}},
           #  {"hass":{"ip":"192.168.0.2", "port":8082,"timeout":5,"edgid" :"ed4200022" , "machineid":"SACNC02"}},
         ]
     }
