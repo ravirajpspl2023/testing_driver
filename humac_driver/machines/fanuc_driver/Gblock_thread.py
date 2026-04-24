@@ -106,7 +106,7 @@ class BlockThread(threading.Thread):
 
         if result != 0 :
             self.connect()
-            time.sleep(0.1)
+            time.sleep(1)
 
     def run(self):
         self.connect()
