@@ -82,6 +82,36 @@ class HassDriver(mp.Process):
         except Exception as e:
             logging.error(f"SMB listPath error: {e}")
         return False
+    
+
+    def _find_file_path(self, conn, current_dir, target_filename):
+        """
+        Recursively searches for the target_filename starting from current_dir.
+        Returns the full path string if found, else None.
+        """
+        try:
+            items = conn.listPath(SMB_SHARE, current_dir)
+            for item in items:
+                if item.filename in ['.', '..']:
+                    continue
+                
+                # Construct path - handle root slash correctly
+                sep = "" if current_dir.endswith("/") else "/"
+                full_path = f"{current_dir}{sep}{item.filename}"
+
+                if item.isDirectory:
+                    # Search inside this directory
+                    found_path = self._find_file_path(conn, full_path, target_filename)
+                    if found_path:
+                        return found_path
+                else:
+                    # Compare filename (case-insensitive for safety)
+                    if item.filename.lower() == target_filename.lower():
+                        return full_path
+        except Exception as e:
+            logging.debug(f"Search failed in {current_dir}: {e}")
+        
+        return None
 
     def download_program(self, program_filename , ts):
         """
@@ -101,17 +131,26 @@ class HassDriver(mp.Process):
 
         try:
             # File exist ka?
-            if not self._file_exists(conn, program_filename):
-                logging.warning(f"File not found on HAAS share: {program_filename}")
+            # if not self._file_exists(conn, program_filename):
+            #     logging.warning(f"File not found on HAAS share: {program_filename}")
+            #     conn.close()
+            #     return False
+
+            logging.info(f"Searching for {program_filename} in share '{SMB_SHARE}'...")
+            remote_full_path = self._find_file_path(conn, "/", program_filename)
+
+            if not remote_full_path:
+                logging.warning(f"File '{program_filename}' not found in any directory.")
                 conn.close()
                 return False
-
-            logging.info(f"Downloading: {program_filename}")
+            
+            logging.info(f"Found file at: {remote_full_path}. Starting download...")
+            
             start_time = perf_counter()
 
             # In-memory download
             buf = io.BytesIO()
-            conn.retrieveFile(SMB_SHARE, program_filename, buf)
+            conn.retrieveFile(SMB_SHARE, remote_full_path, buf)
             conn.close()
 
             buf.seek(0)
@@ -144,30 +183,8 @@ class HassDriver(mp.Process):
                 data['chunk'] = chunk_num
                 data['program'] = json.dumps(["\n\r\r".join(chunk_lines)])
 
-                # Fanuc-style MQTT payload
-                # payload = {
-                #     "get_cnc_programe": {
-                #         "ts":     ts,
-                #         "name":    program_filename,
-                #         "program": ["\n\r\r".join(chunk_lines)],  # Fanuc sarkha single string
-                #         "edgeid":  self.edgeid,
-                #         "chunk":   chunk_num,
-                #         "time":    poll_time,
-                #     },
-                #     "poll_time": poll_time,
-                #     "edgeid":    self.edgeid,
-                # }
                 with self.lock:
                     self.redis.xadd("program",data)
-                    # if not self.event_queue.full():
-                    #     self.event_queue.put(payload)
-                    # else:
-                    #     logging.warning(f"event_queue full — chunk {chunk_num} dropped")
-
-                # logging.info(
-                #     f"Chunk {chunk_num} queued "
-                #     f"(lines {start+1}–{min(start+CHUNK_LINES, total)}/{total})"
-                # )
                 sleep(0.05)
 
             logging.info(f"Published {chunk_num} chunks for: {program_filename}")
