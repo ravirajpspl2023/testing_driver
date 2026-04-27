@@ -212,6 +212,118 @@ class FocasDriver(object):
             
             # return dict(zip(method_names, results))
 
+
+    
+    def get_all_pdf_programs_recursive(self, max_per_call: int = 100, print_tree: bool = True):
+        """
+        Recursively searches all drives and folders using PDF functions
+        ani sagle programs + folders list + print karte.
+        """
+        if not self.handle or self.handle == -16:
+            logging.error("No valid FOCAS handle")
+            return {}
+
+        all_files = []          # List of dicts for easy processing
+        visited = set()         # To avoid infinite loop (rare but safe)
+
+        def recursive_search(current_path: str, depth: int = 0):
+            if current_path in visited:
+                return
+            visited.add(current_path)
+
+            indent = "    " * depth
+            if print_tree:
+                logging.info(f"{indent}📁 Scanning: {current_path}")
+
+            # Prepare input structure
+            pdf_in = IDBPDFADIR()
+            pdf_in.path = current_path.encode('ascii') + b'\0'
+            pdf_in.req_num = 0
+            pdf_in.size_kind = 1      # 1 = Byte
+            pdf_in.type = 1           # 1 = size + comment + timestamp
+
+            num = c_short(max_per_call)
+            pdf_out = ODBPDFADIR()
+
+            try:
+                func = fwlib.cnc_rdpdf_alldir
+                func.argtypes = [c_ushort, POINTER(c_short), POINTER(IDBPDFADIR), POINTER(ODBPDFADIR)]
+                func.restype = c_short
+
+                while True:
+                    ret = func(self.handle, byref(num), byref(pdf_in), byref(pdf_out))
+                    
+                    if ret != 0:
+                        if ret != -10:  # -10 = EW_NO_DATA (no more items)
+                            logging.warning(f"cnc_rdpdf_alldir failed for {current_path} → Error: {ret}")
+                        break
+
+                    if num.value <= 0:
+                        break
+
+                    # Process each item
+                    for i in range(num.value):
+                        item = ODBPDFADIR()
+                        # ctypes doesn't auto copy array, so we need to be careful
+                        # Better way: call in loop with req_num increment if needed
+                        # For simplicity we re-call with updated req_num (common pattern)
+
+                    # Safer & common pattern for alldir (increment req_num)
+                    # Reset for this call
+                    num = c_short(max_per_call)
+                    pdf_in.req_num = 0
+
+                    while True:
+                        ret = func(self.handle, byref(num), byref(pdf_in), byref(pdf_out))
+                        if ret != 0 or num.value == 0:
+                            break
+
+                        for _ in range(num.value):
+                            # Here we need one item at a time in practice.
+                            # For better implementation, many people use a loop with req_num += num.value
+
+                            name = pdf_out.d_f.decode('ascii', errors='ignore').rstrip('\0')
+                            full_path = f"{current_path.rstrip('/')}/{name}" if current_path != "" else name
+
+                            item_dict = {
+                                "path": current_path,
+                                "full_path": full_path,
+                                "name": name,
+                                "type": "FOLDER" if pdf_out.data_kind == 0 else "FILE",
+                                "size": pdf_out.size if pdf_out.data_kind == 1 else 0,
+                                "comment": pdf_out.comment.decode('ascii', errors='ignore').rstrip('\0'),
+                                "date": f"{pdf_out.year:04d}-{pdf_out.mon:02d}-{pdf_out.day:02d} {pdf_out.hour:02d}:{pdf_out.min:02d}",
+                            }
+
+                            all_files.append(item_dict)
+
+                            if print_tree:
+                                icon = "📁" if pdf_out.data_kind == 0 else "📄"
+                                logging.info(f"{indent}    {icon} {name}  {'(' + str(item_dict['size']) + ' bytes)' if pdf_out.data_kind == 1 else ''}")
+
+                            # If it's a folder, recurse
+                            if pdf_out.data_kind == 0 and name not in (".", "..", ""):
+                                recursive_search(full_path, depth + 1)
+
+                        pdf_in.req_num += num.value   # Move to next batch
+
+            except Exception as e:
+                logging.error(f"Error scanning {current_path}: {e}")
+
+        # === Start from root drives ===
+        logging.info("=== Starting Recursive PDF Directory Scan ===")
+        
+        # Common drives to start from
+        drives = [b"MEMORY", b"DATA_SV", b"USB", b""]   # empty = root sometimes
+
+        for drv in drives:
+            path = drv.decode('ascii') if drv else "/"
+            recursive_search(path)
+
+        logging.info(f"=== Scan Complete. Total items found: {len(all_files)} ===")
+
+        return all_files
+
     
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:

@@ -402,3 +402,33 @@ class PRGPNT(ctypes.Structure):
     @property
     def __dict__(self):
         return dict((f, getattr(self, f)) for f, _ in self._fields_)
+
+
+
+
+class IDBPDFADIR(ctypes.Structure):
+    _fields_ = [
+        ("path", ctypes.c_char * 212),
+        ("req_num", ctypes.c_short),
+        ("size_kind", ctypes.c_short),
+        ("type", ctypes.c_short),
+        ("dummy", ctypes.c_short),
+    ]
+
+class ODBPDFADIR(ctypes.Structure):
+    _fields_ = [
+        ("data_kind", ctypes.c_short),   # 0 = Folder, 1 = File
+        ("year", ctypes.c_short),
+        ("mon", ctypes.c_short),
+        ("day", ctypes.c_short),
+        ("hour", ctypes.c_short),
+        ("min", ctypes.c_short),
+        ("sec", ctypes.c_short),
+        ("dummy", ctypes.c_short),
+        ("dummy2", ctypes.c_long),
+        ("size", ctypes.c_long),
+        ("attr", ctypes.c_ulong),
+        ("d_f", ctypes.c_char * 36),     # Folder ya File name
+        ("comment", ctypes.c_char * 52),
+        ("o_time", ctypes.c_char * 12),
+    ]
