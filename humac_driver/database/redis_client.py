@@ -7,7 +7,7 @@ class RedisConnection:
         self.group_name = "HumacDriver"
         self.stream_name = stream_name
         self.db = 0
-        self.host = "192.168.0.3"
+        self.host = "localhost"
         self.port = 6379
 
     def create_group(self):

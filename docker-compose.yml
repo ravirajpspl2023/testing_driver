@@ -19,19 +19,50 @@ services:
         max-size: "20m"
 
   redis:
-    image: redis:7-alpine
-    container_name: redis_database
-    restart: always
-    ports:
-      - "6379:6379"
-    network_mode: host
-    volumes:
-      - redis-data:/data
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
+  image: redis:7-alpine
+  container_name: redis_database
+  restart: unless-stopped        # ✅ changed: won't restart on manual stop
+  network_mode: host             # ✅ kept
+  # ports: removed              # ✅ removed: useless with network_mode: host
+  stop_grace_period: 30s        # ✅ added: gives Redis time to flush AOF cleanly
+  volumes:
+    - redis-data:/data
+  command: >
+    redis-server
+    --appendonly yes
+    --maxmemory 256mb
+    --maxmemory-policy allkeys-lru
+    --aof-use-rdb-preamble yes   # ✅ added: faster AOF rewrite
+    --auto-aof-rewrite-percentage 100
+    --auto-aof-rewrite-min-size 64mb
+  healthcheck:                   # ✅ added: other services wait for healthy Redis
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"              # ✅ added: keeps last 3 log files
 
 volumes:
   redis-data:
+
+#   redis:
+#     image: redis:7-alpine
+#     container_name: redis_database
+#     restart: always
+#     ports:
+#       - "6379:6379"
+#     network_mode: host
+#     volumes:
+#       - redis-data:/data
+#     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "10m"
+
+# volumes:
+#   redis-data:
