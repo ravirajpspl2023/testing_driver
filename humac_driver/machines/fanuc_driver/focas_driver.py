@@ -314,7 +314,7 @@ class FocasDriver(object):
         logging.info("=== Starting Recursive PDF Directory Scan ===")
         
         # Common drives to start from
-        drives = [b"MEMORY", b"DATA_SV", b"USB", b""]   # empty = root sometimes
+        drives = [b"CNC_MEM", b"DATA_SV", b"USB", b""]   # empty = root sometimes
 
         for drv in drives:
             path = drv.decode('ascii') if drv else "/"
