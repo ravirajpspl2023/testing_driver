@@ -289,35 +289,50 @@ class FocasDriver(object):
         file_list: The list of .tap files you got from //DATA_SV/
         """
         file_list = [{'name': '1-52R6_S1.tap', 'type': 'File', 'size': 1978000, 'comment': ''}, {'name': '10-25R5_S1.tap', 'type': 'File', 'size': 449500, 'comment': ''}, {'name': '2-52R6_S1.tap', 'type': 'File', 'size': 2243000, 'comment': ''}, {'name': '3-52R6_S1.tap', 'type': 'File', 'size': 1839000, 'comment': ''}, {'name': '4-52R6_S1.tap', 'type': 'File', 'size': 985000, 'comment': ''}, {'name': '5-52R6_S1.tap', 'type': 'File', 'size': 416500, 'comment': ''}, {'name': '6-52R6_S1.tap', 'type': 'File', 'size': 776000, 'comment': ''}, {'name': '7-25R5_S1.tap', 'type': 'File', 'size': 1695500, 'comment': ''}, {'name': '8-25R5_S1.tap', 'type': 'File', 'size': 1977000, 'comment': ''}, {'name': '9-25R5_S1.tap', 'type': 'File', 'size': 133500, 'comment': ''}]
-        search_string = "N17778 X-241.599 Y-259.068"
+        search_string = "N17778".encode('ascii')
 
         for file in file_list:
+            # 1. Prepare Path (Ensure NULL termination for Focas)
             full_path = f"//DATA_SV/{file['name']}".encode('ascii')
             
-            # 1. Start the search in this specific file
-            # Arguments: handle, path, line_no (0=top), character_pos, search_string
+            # 2. Trigger the search
+            # Params: handle, path, line_no, type, direct, repeat, buffer
             ret = fwlib.cnc_pdf_searchword(
                 self.handle, 
                 full_path, 
-                0,              # Start from line 0
-                0,              # Start from char 0
-                search_string.encode('ascii')
+                0,          # line_no: 0 starts from top
+                1,          # type: 1 = Word search
+                1,          # direct: 1 = Towards bottom
+                1,          # repeat: 1 = First match
+                search_string
             )
             
-            if ret == 0:
-                # 2. Get the result
-                line_no = c_long()
-                char_pos = c_long()
-                res = fwlib.cnc_pdf_searchresult(self.handle, ctypes.byref(line_no), ctypes.byref(char_pos))
+            logging.info(f"searching result {ret}")
+            if ret == 0: # EW_OK (Search started successfully)
+                # 3. Poll for the result (Search is asynchronous)
+                line_no = c_ulong()
+                while True:
+                    # Note: cnc_pdf_searchresult typically doesn't take line/char refs 
+                    # in the call itself for some versions, but following your structure:
+                    res = fwlib.cnc_pdf_searchresult(self.handle, ctypes.byref(line_no))
+                    
+                    if res == 0: # EW_OK
+                        logging.info(f"MATCH FOUND! File: {file['name']} at Line: {line_no.value}")
+                        return file['name']
+                    elif res == -1: # EW_BUSY
+                        import time
+                        time.sleep(0.1)
+                        continue
+                    else:
+                        logging.info(f"Not found in {file['name']}, error code: {res}")
+                        break
+                        
+            elif ret == 12: # EW_MODE
+                logging.error("CNC is in the wrong mode (must be EDIT or MEM usually)")
+            elif ret == 13: # EW_REJECT
+                logging.warning(f"CNC Busy or Emergency Stop, skipping {file['name']}")
                 
-                if res == 0:
-                    logging.info(f"MATCH FOUND! File: {file['name']} at Line: {line_no.value}")
-                    return file['name']
-            
-            elif ret == 13: # EW_REJECT (Common if CNC is busy)
-                logging.info(f"CNC Busy, skipping {file['name']}")
-                
-        logging.info("Not found in any file.")
+        return None
 
     def get_cnc_program_details_ascii(self):
     # Prepare the data dictionary with a timestamp
