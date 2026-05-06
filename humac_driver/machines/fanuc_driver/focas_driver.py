@@ -341,6 +341,8 @@ class FocasDriver(object):
         # 2. Call the API in ASCII mode (type=1, length=31)
         # Reference: https://www.inventcom.net/fanuc-focas-library/Program/cnc_rdproginfo
         result = fanuc_info(self.handle, 1, 31, byref(odbnc))
+
+
         
         if result == 0:
             # Get the raw bytes and decode to string
@@ -365,7 +367,7 @@ class FocasDriver(object):
         
         # Since you asked for the function not to return data (perhaps to log or store instead)
         # You can print it or assign it to a class variable
-        print(f"Program Info (ASCII): {data}")
+        logging.info(f"Program Info (ASCII): {data}")
 
     
     def disconnect(self,):
