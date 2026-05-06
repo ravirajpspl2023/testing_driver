@@ -311,13 +311,13 @@ class FocasDriver(object):
                 res = fwlib.cnc_pdf_searchresult(self.handle, ctypes.byref(line_no), ctypes.byref(char_pos))
                 
                 if res == 0:
-                    print(f"MATCH FOUND! File: {file['name']} at Line: {line_no.value}")
+                    logging.info(f"MATCH FOUND! File: {file['name']} at Line: {line_no.value}")
                     return file['name']
             
             elif ret == 13: # EW_REJECT (Common if CNC is busy)
-                print(f"CNC Busy, skipping {file['name']}")
+                logging.info(f"CNC Busy, skipping {file['name']}")
                 
-        return "Not found in any file."
+        logging.info("Not found in any file.")
 
     def get_cnc_program_details_ascii(self):
     # Prepare the data dictionary with a timestamp
