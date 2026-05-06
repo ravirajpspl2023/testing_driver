@@ -30,7 +30,8 @@ class Machine(mp.Process):
         pid = os.getpid()
         self.driver = FocasDriver(self.config)
         try:           
-            programs = self.driver.get_cnc_program_details_ascii()
+            # programs = self.driver.get_cnc_program_details_ascii()
+            self.driver.get_all_program_names()
 
             while True:
                 data = self.driver.get_cnc_program_detais()
