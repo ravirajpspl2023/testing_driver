@@ -249,11 +249,11 @@ class FocasDriver(object):
                         "comment": comment,
                     }
                     programs_list.append(file_info)
-                    print(f"Found: {file_info['name']} - {file_info['comment']}")
+                    logging.info(f"Found: {file_info['name']} - {file_info['comment']}")
                 
                 pdf_in.req_num += num_to_read.value
             else:
-                print(f"Error reading directory: {ret}")
+                logging.error(f"Error reading directory: {ret}")
                 break
         logging.info(f"Found programs: {programs_list}")
 
@@ -262,12 +262,12 @@ class FocasDriver(object):
         main_buf = ctypes.create_string_buffer(244)
         
         fwlib.cnc_pdf_rdmain(self.handle, byref(main_buf))
-        main_path = main_buf.path.decode('shift-jis').split('\x00')[0]
+        main_path = main_buf.value.decode('shift-jis').split('\x00')[0]
 
         # 2. Get Currently Executing Program
         exe_buf = ctypes.create_string_buffer(244)
         fwlib.cnc_exeprgname(self.handle, byref(exe_buf))
-        exe_path = exe_buf.name.decode('shift-jis').split('\x00')[0]
+        exe_path = exe_buf.value.decode('shift-jis').split('\x00')[0]
 
         logging.info(f"Main Selected: {main_path}")
         logging.info(f"Actually Running: {exe_path}")
