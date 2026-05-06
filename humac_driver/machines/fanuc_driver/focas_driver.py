@@ -292,12 +292,12 @@ class FocasDriver(object):
 
         # RULE: The search buffer MUST NOT contain spaces or lowercase letters.
         # We search for the unique ID (N17778) first.
-        search_text = "N17778"
+        search_text = "N17778\x00"
         search_buf = create_string_buffer(search_text.encode('ascii'))
 
         for file in file_list:
             # RULE: prog_name must be a full path string (NULL terminated)
-            path_str = f"//DATA_SV/{file['name']}"
+            path_str = f"//DATA_SV/{file['name']}\x00"
             prog_name_ptr = create_string_buffer(path_str.encode('ascii'))
             
             logging.info(f"Searching in: {path_str}")
