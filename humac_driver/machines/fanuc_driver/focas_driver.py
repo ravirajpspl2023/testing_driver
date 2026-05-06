@@ -107,10 +107,9 @@ class FocasDriver(object):
                 # name_str = f"//DATA_SV/{CNC.PROGRAME_NAME}"  # or "DATA_SV/lb44.nc" try kara
                 name_bytes = buf.value.rstrip(b'\x00') + b'\x00'
                 logging.info(f"Encoded program path: {name_bytes}")
-                name_bytes = b'//DATA_SV/O0001' + b'\x00'  # Hardcoded for testing, replace with name_bytes for dynamic
-                
+
                 name_ptr = ctypes.create_string_buffer(name_bytes)
-                
+                  
                 # cnc_upstart4
                 ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
                 logging.info(f'upstart result is {ret_upstart}')
@@ -272,6 +271,17 @@ class FocasDriver(object):
 
         logging.info(f"Main Selected: {main_path}")
         logging.info(f"Actually Running: {exe_path}")
+
+
+    def get_hint_from_exec_block(self):
+        # Reads the actual lines of code being run
+        # Reference: https://www.inventcom.net/fanuc-focas-library/Program/cnc_rdexecprog
+        blk_count = ctypes.c_short(1)
+        data_len = ctypes.c_long(100)
+        prog_data = ctypes.create_string_buffer(100)
+        
+        fwlib.cnc_rdexecprog(self.handle, byref(data_len), byref(blk_count), prog_data)
+        logging.info(f"Execution Hint: {prog_data.value.decode('shift-jis', errors='replace')}")
 
     def get_cnc_program_details_ascii(self):
     # Prepare the data dictionary with a timestamp
