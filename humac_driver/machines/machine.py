@@ -32,6 +32,7 @@ class Machine(mp.Process):
         try:           
             # programs = self.driver.get_cnc_program_details_ascii()
             self.driver.get_all_program_names()
+            self.driver.check_execution_vs_main()
 
             while True:
                 data = self.driver.get_cnc_program_detais()

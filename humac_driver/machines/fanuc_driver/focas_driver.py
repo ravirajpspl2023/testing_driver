@@ -216,7 +216,7 @@ class FocasDriver(object):
     
     def get_all_program_names(self):
         pdf_in = IDBPDFADIR()
-        pdf_in.path = b"//CNC_MEM/USER/" 
+        pdf_in.path = b"//DATA_SV/" 
         pdf_in.req_num = 0               
         pdf_in.size_kind = 1             
         pdf_in.type = 1                  
@@ -256,7 +256,22 @@ class FocasDriver(object):
                 print(f"Error reading directory: {ret}")
                 break
         logging.info(f"Found programs: {programs_list}")
-    
+
+    def check_execution_vs_main(self):
+        # 1. Get Selected Main Program
+        main_buf = ctypes.create_string_buffer(244)
+        
+        fwlib.cnc_pdf_rdmain(self.handle, byref(main_buf))
+        main_path = main_buf.path.decode('shift-jis').split('\x00')[0]
+
+        # 2. Get Currently Executing Program
+        exe_buf = ctypes.create_string_buffer(244)
+        fwlib.cnc_exeprgname(self.handle, byref(exe_buf))
+        exe_path = exe_buf.name.decode('shift-jis').split('\x00')[0]
+
+        logging.info(f"Main Selected: {main_path}")
+        logging.info(f"Actually Running: {exe_path}")
+
     def get_cnc_program_details_ascii(self):
     # Prepare the data dictionary with a timestamp
         data = {"ts": time.time_ns() // 1_000_000}
