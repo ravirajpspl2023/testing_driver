@@ -283,55 +283,59 @@ class FocasDriver(object):
         fwlib.cnc_rdexecprog(self.handle, byref(data_len), byref(blk_count), prog_data)
         logging.info(f"Execution Hint: {prog_data.value.decode('shift-jis', errors='replace')}")
 
-    def search_text_in_dataserver(self,):
-        """
-        search_string: "X-241.599 Y-259.068"
-        file_list: The list of .tap files you got from //DATA_SV/
-        """
-        file_list = [{'name': '1-52R6_S1.tap', 'type': 'File', 'size': 1978000, 'comment': ''}, {'name': '10-25R5_S1.tap', 'type': 'File', 'size': 449500, 'comment': ''}, {'name': '2-52R6_S1.tap', 'type': 'File', 'size': 2243000, 'comment': ''}, {'name': '3-52R6_S1.tap', 'type': 'File', 'size': 1839000, 'comment': ''}, {'name': '4-52R6_S1.tap', 'type': 'File', 'size': 985000, 'comment': ''}, {'name': '5-52R6_S1.tap', 'type': 'File', 'size': 416500, 'comment': ''}, {'name': '6-52R6_S1.tap', 'type': 'File', 'size': 776000, 'comment': ''}, {'name': '7-25R5_S1.tap', 'type': 'File', 'size': 1695500, 'comment': ''}, {'name': '8-25R5_S1.tap', 'type': 'File', 'size': 1977000, 'comment': ''}, {'name': '9-25R5_S1.tap', 'type': 'File', 'size': 133500, 'comment': ''}]
-        search_string = "N17778".encode('ascii')
+    def search_text_in_dataserver(self):
+        # Your program list
+        file_list =[{'name': '1-52R6_S1.tap', 'type': 'File', 'size': 1978000, 'comment': ''}, {'name': '10-25R5_S1.tap', 'type': 'File', 'size': 449500, 'comment': ''}, {'name': '2-52R6_S1.tap', 'type': 'File', 'size': 2243000, 'comment': ''}, {'name': '3-52R6_S1.tap', 'type': 'File', 'size': 1839000, 'comment': ''}, {'name': '4-52R6_S1.tap', 'type': 'File', 'size': 985000, 'comment': ''}, {'name': '5-52R6_S1.tap', 'type': 'File', 'size': 416500, 'comment': ''}, {'name': '6-52R6_S1.tap', 'type': 'File', 'size': 776000, 'comment': ''}, {'name': '7-25R5_S1.tap', 'type': 'File', 'size': 1695500, 'comment': ''}, {'name': '8-25R5_S1.tap', 'type': 'File', 'size': 1977000, 'comment': ''}, {'name': '9-25R5_S1.tap', 'type': 'File', 'size': 133500, 'comment': ''}]
+        
+        # CRITICAL: Focas word search often fails with spaces. 
+        # Search for the Block Number (N17778) specifically.
+        search_string = "N17778".encode('ascii') 
+        search_buf = ctypes.create_string_buffer(search_string)
 
         for file in file_list:
-            # 1. Prepare Path (Ensure NULL termination for Focas)
+            # Construct path exactly like your working rdmain example
             full_path = f"//DATA_SV/{file['name']}".encode('ascii')
+            path_buf = ctypes.create_string_buffer(full_path)
             
-            # 2. Trigger the search
-            # Params: handle, path, line_no, type, direct, repeat, buffer
+            logging.info(f"Searching in: {full_path}")
+
+            # 1. Start Search
+            # handle, path, line_no, type(1=word), direct(1=down), repeat(1), buffer
             ret = fwlib.cnc_pdf_searchword(
                 self.handle, 
-                full_path, 
-                0,          # line_no: 0 starts from top
-                1,          # type: 1 = Word search
-                1,          # direct: 1 = Towards bottom
-                1,          # repeat: 1 = First match
-                search_string
+                path_buf, 
+                0,  
+                1,  
+                1,  
+                1,  
+                search_buf
             )
             
-            logging.info(f"searching result {ret}")
-            if ret == 0: # EW_OK (Search started successfully)
-                # 3. Poll for the result (Search is asynchronous)
-                line_no = c_ulong()
+            if ret == 0:
+                # 2. Get Result
+                # In many Focas versions, searchresult requires (handle, pointer_to_line_no)
+                # Some versions require (handle, pointer_to_line_no, pointer_to_char_pos)
+                line_no = c_long()
+                
+                # Polling loop for Asynchronous search
                 while True:
-                    # Note: cnc_pdf_searchresult typically doesn't take line/char refs 
-                    # in the call itself for some versions, but following your structure:
-                    res = fwlib.cnc_pdf_searchresult(self.handle, ctypes.byref(line_no))
+                    res = fwlib.cnc_pdf_searchresult(self.handle, byref(line_no))
                     
-                    if res == 0: # EW_OK
-                        logging.info(f"MATCH FOUND! File: {file['name']} at Line: {line_no.value}")
+                    if res == 0: # Match found
+                        logging.info(f"MATCH FOUND! {file['name']} at line {line_no.value}")
                         return file['name']
                     elif res == -1: # EW_BUSY
                         import time
-                        time.sleep(0.1)
+                        time.sleep(0.05)
                         continue
                     else:
-                        logging.info(f"Not found in {file['name']}, error code: {res}")
+                        # If you get 5 here, the CNC is rejecting the 'search_buf' content 
+                        # from the previous cnc_pdf_searchword call.
+                        logging.info(f"Search failed in {file['name']} with code {res}")
                         break
-                        
-            elif ret == 12: # EW_MODE
-                logging.error("CNC is in the wrong mode (must be EDIT or MEM usually)")
-            elif ret == 13: # EW_REJECT
-                logging.warning(f"CNC Busy or Emergency Stop, skipping {file['name']}")
-                
+            else:
+                logging.error(f"Could not start search in {file['name']}, code: {ret}")
+
         return None
 
     def get_cnc_program_details_ascii(self):
