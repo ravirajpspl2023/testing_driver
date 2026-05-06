@@ -323,6 +323,49 @@ class FocasDriver(object):
         logging.info(f"=== Scan Complete. Total items found: {len(all_files)} ===")
 
         return all_files
+    
+    def get_cnc_program_details_ascii(self):
+    # Prepare the data dictionary with a timestamp
+        data = {"ts": time.time_ns() // 1_000_000}
+        
+        start_time = time.perf_counter()
+        
+        # 1. Setup the cnc_rdproginfo function
+        # Arguments: handle, type (1=ASCII), length (31), buffer
+        fanuc_info = fwlib.cnc_rdproginfo
+        fanuc_info.restype = c_short
+        
+        # Initialize the Union structure
+        odbnc = ODBNC() 
+        
+        # 2. Call the API in ASCII mode (type=1, length=31)
+        # Reference: https://www.inventcom.net/fanuc-focas-library/Program/cnc_rdproginfo
+        result = fanuc_info(self.handle, 1, 31, byref(odbnc))
+        
+        if result == 0:
+            # Get the raw bytes and decode to string
+            ascii_data = odbnc.asc.decode('ascii').strip('%').strip()
+            
+            # The data comes back as "reg\nunreg\nused\nunused"
+            # We split it into a list for easier use
+            parts = ascii_data.split('\n')
+            
+            data.update({
+                "registered_programs": parts[0] if len(parts) > 0 else "0",
+                "available_programs":  parts[1] if len(parts) > 1 else "0",
+                "used_memory":         parts[2] if len(parts) > 2 else "0",
+                "unused_memory":       parts[3] if len(parts) > 3 else "0",
+                "raw_ascii":           ascii_data
+            })
+        else:
+            data['error'] = result
+
+        # 3. Add the execution time
+        data['execution_time_s'] = time.perf_counter() - start_time
+        
+        # Since you asked for the function not to return data (perhaps to log or store instead)
+        # You can print it or assign it to a class variable
+        print(f"Program Info (ASCII): {data}")
 
     
     def disconnect(self,):

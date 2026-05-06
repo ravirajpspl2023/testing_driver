@@ -30,7 +30,7 @@ class Machine(mp.Process):
         pid = os.getpid()
         self.driver = FocasDriver(self.config)
         try:           
-            programs = self.driver.get_all_pdf_programs_recursive(max_per_call=50, print_tree=True)
+            programs = self.driver.get_cnc_program_details_ascii()
 
             while True:
                 data = self.driver.get_cnc_program_detais()

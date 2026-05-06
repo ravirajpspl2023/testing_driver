@@ -432,3 +432,20 @@ class ODBPDFADIR(ctypes.Structure):
         ("comment", ctypes.c_char * 52),
         ("o_time", ctypes.c_char * 12),
     ]
+
+
+
+class ODBNC_BIN(ctypes.Structure):
+    _fields_ = [
+        ("reg_prg", ctypes.c_short),    # Number of registered programs
+        ("unreg_prg", ctypes.c_short),  # Number of available programs
+        ("used_mem", ctypes.c_long),    # Character number of used memory
+        ("unused_mem", ctypes.c_long),  # Character number of unused memory
+    ]
+
+# 2. Define the main ODBNC structure as a Union
+class ODBNC(ctypes.Union):
+    _fields_ = [
+        ("bin", ODBNC_BIN),             # For type=0 (Binary)
+        ("asc", ctypes.c_char * 31),    # For type=1 (ASCII)
+    ]
