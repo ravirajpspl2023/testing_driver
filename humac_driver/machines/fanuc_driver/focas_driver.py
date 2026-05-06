@@ -284,48 +284,62 @@ class FocasDriver(object):
         logging.info(f"Execution Hint: {prog_data.value.decode('shift-jis', errors='replace')}")
 
     def search_text_in_dataserver(self):
-        # Try searching for a SINGLE CNC WORD only. No spaces.
-        # If you need the full line, find the N-number first, then read that line.
+        """
+        Searches for a specific word in a list of files on the DATA_SV drive.
+        Returns the filename if found, else None.
+        """
         file_list = [{'name': '1-52R6_S1.tap', 'type': 'File', 'size': 1978000, 'comment': ''}, {'name': '10-25R5_S1.tap', 'type': 'File', 'size': 449500, 'comment': ''}, {'name': '2-52R6_S1.tap', 'type': 'File', 'size': 2243000, 'comment': ''}, {'name': '3-52R6_S1.tap', 'type': 'File', 'size': 1839000, 'comment': ''}, {'name': '4-52R6_S1.tap', 'type': 'File', 'size': 985000, 'comment': ''}, {'name': '5-52R6_S1.tap', 'type': 'File', 'size': 416500, 'comment': ''}, {'name': '6-52R6_S1.tap', 'type': 'File', 'size': 776000, 'comment': ''}, {'name': '7-25R5_S1.tap', 'type': 'File', 'size': 1695500, 'comment': ''}, {'name': '8-25R5_S1.tap', 'type': 'File', 'size': 1977000, 'comment': ''}, {'name': '9-25R5_S1.tap', 'type': 'File', 'size': 133500, 'comment': ''}]
-        search_string = "N17778".encode('ascii')
-        search_buf = create_string_buffer(search_string)
+
+        # RULE: The search buffer MUST NOT contain spaces or lowercase letters.
+        # We search for the unique ID (N17778) first.
+        search_text = "N17778"
+        search_buf = create_string_buffer(search_text.encode('ascii'))
 
         for file in file_list:
-            full_path = f"//DATA_SV/{file['name']}".encode('ascii')+ b'\x00'  # Null-terminated string
-            path_buf = create_string_buffer(full_path)
+            # RULE: prog_name must be a full path string (NULL terminated)
+            path_str = f"//DATA_SV/{file['name']}"
+            prog_name_ptr = create_string_buffer(path_str.encode('ascii'))
             
-            logging.info(f"Searching in: {full_path}")
+            logging.info(f"Searching in: {path_str}")
 
-            # Use explicit c_ulong for all numerical arguments
+            # 1. Initiate the Search
+            # Arguments must be explicitly cast to c_ulong to ensure 4-byte alignment
             ret = fwlib.cnc_pdf_searchword(
-                self.handle, 
-                path_buf, 
-                c_ulong(0),  # line_no: 0 = start of program
-                c_ulong(1),  # type: 1 = Word Search
-                c_ulong(1),  # direct: 1 = Down
-                c_ulong(1),  # repeat: 1 = First occurrence
-                search_buf
+                self.handle,
+                prog_name_ptr,    # prog_name: char*
+                c_ulong(0),       # line_no: 0 (start from top)
+                c_ulong(1),       # type: 1 (Word search)
+                c_ulong(1),       # direct: 1 (Search downwards)
+                c_ulong(1),       # repeat: 1 (First occurrence)
+                search_buf        # buffer: char*
             )
-            
-            if ret == 0:
-                line_no = c_long()
-                # Search is asynchronous; we must poll for the result
-                while True:
-                    res = fwlib.cnc_pdf_searchresult(self.handle, byref(line_no))
-                    if res == 0:
-                        logging.info(f"MATCH! {file['name']} at line {line_no.value}")
+
+            if ret == 0: # EW_OK
+                # 2. Retrieve the Result (Asynchronous Polling)
+                found_line_no = c_long()
+                
+                # The CNC takes time to scan; we must loop until it's finished.
+                timeout = time.time() + 5  # 5 second safety timeout
+                while time.time() < timeout:
+                    # result = [handle, pointer to line number]
+                    res = fwlib.cnc_pdf_searchresult(self.handle, byref(found_line_no))
+                    
+                    if res == 0: # EW_OK (Found!)
+                        logging.info(f"MATCH FOUND! File: {file['name']} at Line: {found_line_no.value}")
                         return file['name']
+                    
                     elif res == -1: # EW_BUSY
-                        import time
-                        time.sleep(0.05)
+                        time.sleep(0.05) # Wait 50ms and try again
                         continue
-                    else:
-                        logging.info(f"No match in {file['name']}, code: {res}")
+                    
+                    else: # Any other error (like EW_NUMBER if not found)
+                        logging.info(f"No match in {file['name']} (Result code: {res})")
                         break
             else:
-                # If still getting 5, the CNC doesn't like the '1' for type or the string.
-                logging.error(f"Error {ret}: CNC rejected the search parameters for {file['name']}")
+                # If you still get code 5 here, it means the CNC rejected your path or string format.
+                logging.error(f"Could not start search in {file['name']}, Error Code: {ret}")
 
+        logging.info("Search completed. No matches found in any file.")
         return None
 
     def get_cnc_program_details_ascii(self):
