@@ -215,48 +215,46 @@ class FocasDriver(object):
 
     
     def get_all_program_names(self):
-        """
-        Reads all files in the //CNC_MEM/USER/ directory
-        """
-        # 1. Setup Input parameters
-        # Reference: https://www.inventcom.net/fanuc-focas-library/program/cnc_rdpdf_alldir
         pdf_in = IDBPDFADIR()
-        pdf_in.path = b"//CNC_MEM/USER/"  # Adjust path if your files are deeper
-        pdf_in.req_num = 0                # Start from the first file
-        pdf_in.size_kind = 1              # Return size in Bytes
-        pdf_in.type = 1                   # Get Comments and Timestamps
+        pdf_in.path = b"//CNC_MEM/USER/" 
+        pdf_in.req_num = 0               
+        pdf_in.size_kind = 1             
+        pdf_in.type = 1                  
         
-        # 2. Setup Output buffer (Prepare to read 10 files at a time)
         num_to_read = c_short(10)
-        pdf_out = (ODBPDFADIR * 10)()     # Array of 10 structures
+        pdf_out = (ODBPDFADIR * 10)()    
         
         programs_list = []
         
         while True:
-            # Call the API
-            # Arguments: handle, num_to_read, input_struct, output_struct
             ret = fwlib.cnc_rdpdf_alldir(self.handle, byref(num_to_read), byref(pdf_in), byref(pdf_out))
             
             if ret == 0:
                 if num_to_read.value == 0:
-                    break # No more files to read
+                    break
                     
                 for i in range(num_to_read.value):
+                    # FIX: Use shift-jis and errors='replace' to handle special characters
+                    try:
+                        name = pdf_out[i].d_f.split(b'\x00')[0].decode('shift-jis', errors='replace')
+                        comment = pdf_out[i].comment.split(b'\x00')[0].decode('shift-jis', errors='replace')
+                    except Exception as e:
+                        name = "Unknown_Name"
+                        comment = f"Decode Error: {e}"
+
                     file_info = {
-                        "name": pdf_out[i].d_f.decode('ascii').strip('\x00'),
+                        "name": name,
                         "type": "File" if pdf_out[i].data_kind == 1 else "Folder",
                         "size": pdf_out[i].size,
-                        "comment": pdf_out[i].comment.decode('ascii').strip('\x00'),
+                        "comment": comment,
                     }
                     programs_list.append(file_info)
                     print(f"Found: {file_info['name']} - {file_info['comment']}")
                 
-                # Increment req_num to get the next batch of files
                 pdf_in.req_num += num_to_read.value
             else:
                 print(f"Error reading directory: {ret}")
                 break
-                
         logging.info(f"Found programs: {programs_list}")
     
     def get_cnc_program_details_ascii(self):
