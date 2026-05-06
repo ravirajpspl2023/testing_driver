@@ -291,7 +291,7 @@ class FocasDriver(object):
         search_buf = create_string_buffer(search_string)
 
         for file in file_list:
-            full_path = f"//DATA_SV/{file['name']}".encode('ascii')
+            full_path = f"//DATA_SV/{file['name']}".encode('ascii')+ b'\x00'  # Null-terminated string
             path_buf = create_string_buffer(full_path)
             
             logging.info(f"Searching in: {full_path}")
