@@ -109,7 +109,7 @@ class FocasDriver(object):
                 logging.info(f"Encoded program path: {name_bytes}")
 
                 name_ptr = ctypes.create_string_buffer(name_bytes)
-                  
+
                 # cnc_upstart4
                 ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
                 logging.info(f'upstart result is {ret_upstart}')
@@ -282,6 +282,42 @@ class FocasDriver(object):
         
         fwlib.cnc_rdexecprog(self.handle, byref(data_len), byref(blk_count), prog_data)
         logging.info(f"Execution Hint: {prog_data.value.decode('shift-jis', errors='replace')}")
+
+    def search_text_in_dataserver(self,):
+        """
+        search_string: "X-241.599 Y-259.068"
+        file_list: The list of .tap files you got from //DATA_SV/
+        """
+        file_list = [{'name': '1-52R6_S1.tap', 'type': 'File', 'size': 1978000, 'comment': ''}, {'name': '10-25R5_S1.tap', 'type': 'File', 'size': 449500, 'comment': ''}, {'name': '2-52R6_S1.tap', 'type': 'File', 'size': 2243000, 'comment': ''}, {'name': '3-52R6_S1.tap', 'type': 'File', 'size': 1839000, 'comment': ''}, {'name': '4-52R6_S1.tap', 'type': 'File', 'size': 985000, 'comment': ''}, {'name': '5-52R6_S1.tap', 'type': 'File', 'size': 416500, 'comment': ''}, {'name': '6-52R6_S1.tap', 'type': 'File', 'size': 776000, 'comment': ''}, {'name': '7-25R5_S1.tap', 'type': 'File', 'size': 1695500, 'comment': ''}, {'name': '8-25R5_S1.tap', 'type': 'File', 'size': 1977000, 'comment': ''}, {'name': '9-25R5_S1.tap', 'type': 'File', 'size': 133500, 'comment': ''}]
+        search_string = "N17778 X-241.599 Y-259.068"
+
+        for file in file_list:
+            full_path = f"//DATA_SV/{file['name']}".encode('ascii')
+            
+            # 1. Start the search in this specific file
+            # Arguments: handle, path, line_no (0=top), character_pos, search_string
+            ret = fwlib.cnc_pdf_searchword(
+                self.handle, 
+                full_path, 
+                0,              # Start from line 0
+                0,              # Start from char 0
+                search_string.encode('ascii')
+            )
+            
+            if ret == 0:
+                # 2. Get the result
+                line_no = c_long()
+                char_pos = c_long()
+                res = fwlib.cnc_pdf_searchresult(self.handle, ctypes.byref(line_no), ctypes.byref(char_pos))
+                
+                if res == 0:
+                    print(f"MATCH FOUND! File: {file['name']} at Line: {line_no.value}")
+                    return file['name']
+            
+            elif ret == 13: # EW_REJECT (Common if CNC is busy)
+                print(f"CNC Busy, skipping {file['name']}")
+                
+        return "Not found in any file."
 
     def get_cnc_program_details_ascii(self):
     # Prepare the data dictionary with a timestamp

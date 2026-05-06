@@ -35,6 +35,9 @@ class Machine(mp.Process):
             self.driver.check_execution_vs_main()
             self.driver.get_hint_from_exec_block()
 
+            self.driver.search_text_in_dataserver()
+            
+
             while True:
                 data = self.driver.get_cnc_program_detais()
                 start_time = time.time()
