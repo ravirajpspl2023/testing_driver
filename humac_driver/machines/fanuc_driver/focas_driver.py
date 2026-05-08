@@ -243,22 +243,13 @@ class FocasDriver(object):
                         comment = f"Decode Error: {e}"
                     path = f"//DATA_SV/{name}".encode('shift-jis')
 
-                    ret = fwlib.cnc_upldpdf(self.handle, 0, path)
-                    logging.info(f"Upload result for {name}: {ret}")
+                    name_ptr = ctypes.create_string_buffer(path)
+                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
+                    logging.info(f'upstart result is {ret_upstart}')
 
-                    while True:
-                        chunk_size = 1024
-                        buf = create_string_buffer(chunk_size)
-                        len_to_read = c_long(chunk_size)
+                    ret_end = fwlib.cnc_upend4(self.handle)
+                    logging.info(f"upend4 result: {ret_end}")
 
-                        ret_dl = fwlib.cnc_download(self.handle, byref(len_to_read), buf)
-
-                        if ret_dl == 0:
-                            logging.info(f"data :{ buf.value[:len_to_read.value].decode('utf-8', errors='ignore').strip()}")
-                        if ret_dl != 0:
-                            logging.error(f"Download failed for {name} with code: {ret_dl}")
-                            break
-                    ret = fwlib.cnc_dwnend(self.handle)
                     logging.info(f"Download end result for {name}: {ret}")
 
                     file_info = {
