@@ -241,7 +241,7 @@ class FocasDriver(object):
                     except Exception as e:
                         name = "Unknown_Name"
                         comment = f"Decode Error: {e}"
-                    path = f"//DATA_SV/{name}".encode('shift-jis')
+                    path = f"//DATA_SV/{name}".encode('shift-jis')+b'\x00'  # Ensure null-terminated string
                     name_ptr = ctypes.create_string_buffer(path)
                     logging.info(f'pointer : {name_ptr.value}')
                     ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
