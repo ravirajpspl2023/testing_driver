@@ -241,20 +241,20 @@ class FocasDriver(object):
                     except Exception as e:
                         name = "Unknown_Name"
                         comment = f"Decode Error: {e}"
-                    path = f"//DATA_SV/{name}"  # Ensure null-terminated string
-                    name_ptr = ctypes.create_string_buffer(path.encode('shift-jis'))
-                    logging.info(f'pointer : {name_ptr.value}')
-                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
-                    logging.info(f'upstart result is {ret_upstart}')
-                    if ret_upstart != 0:
-                        err = ODBERR()
-                        fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
-                        logging.error(f"Error {ret}: Detail {err.err_no} (1:Path Error, 2:File Not Found)")
-                    ret_end = fwlib.cnc_upend4(self.handle)
-                    logging.info(f"upend4 result: {ret_end}")
-
-                    logging.info(f"Download end result for {name}: {ret}")
-
+                    path_sv = f"//DATA_SV/{name}"  # Ensure null-terminated string
+                    paths = [name,path_sv]
+                    for path in paths:
+                        name_ptr = ctypes.create_string_buffer(path.encode('shift-jis'))
+                        logging.info(f'pointer : {name_ptr.value}')
+                        ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
+                        logging.info(f'upstart result is {ret_upstart}')
+                        if ret_upstart != 0:
+                            err = ODBERR()
+                            fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
+                            logging.error(f"Error {ret_upstart}: Detail {err.err_no} (1:Path Error, 2:File Not Found)")
+                        ret_end = fwlib.cnc_upend4(self.handle)
+                        logging.info(f"upend4 result: {ret_end}")
+                        
                     file_info = {
                         "name": name,
                         "type": "File" if pdf_out[i].data_kind == 1 else "Folder",
