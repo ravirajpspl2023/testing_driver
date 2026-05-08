@@ -241,20 +241,29 @@ class FocasDriver(object):
                     except Exception as e:
                         name = "Unknown_Name"
                         comment = f"Decode Error: {e}"
-                    path = f"//DATA_SV/{name}".encode('shift-jis').strip(b'\x00') # Ensure null-terminated
+                    path = f"//DATA_SV/{name}".encode('shift-jis')
                     path_ptr = create_string_buffer(path)
                     line_num = c_uint32(0)
                     num_line = c_uint32(100)
                     buffer_size = 1024 * 16
                     buf = create_string_buffer(buffer_size)
                     logging.info(f"Starting download for: {path}")
+
                     while True :
-                        ret = fwlib.cnc_rdpdf_line(self.handle, path, line_num, byref(num_line), buf, buffer_size)
+                        ret = fwlib.cnc_rdpdf_line(
+                                self.handle, 
+                                path, 
+                                byref(line_num),  # FIX: Added byref here
+                                byref(num_line), 
+                                buf, 
+                                buffer_size
+                            )
                         if ret == 0:
                             if num_line.value == 0:
-                                logging.info(f"Reached end of file: {name}")
+                                logging.info(f"Download complete for {name}")
                                 break
                             content = buf.value.decode('shift-jis', errors='replace')
+                            logging.info(f"{content}")
                             logging.info(f"Read {num_line.value} lines from {name}")
                             line_num.value += num_line.value
 
