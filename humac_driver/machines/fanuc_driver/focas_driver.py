@@ -242,34 +242,24 @@ class FocasDriver(object):
                         name = "Unknown_Name"
                         comment = f"Decode Error: {e}"
                     path = f"//DATA_SV/{name}".encode('shift-jis')
-                    path_ptr = create_string_buffer(path)
-                    line_num = c_uint32(0)
-                    num_line = c_uint32(100)
-                    buffer_size = 1024 * 16
-                    buf = create_string_buffer(buffer_size)
-                    logging.info(f"Starting download for: {path}")
 
-                    while True :
-                        ret = fwlib.cnc_rdpdf_line(
-                                self.handle, 
-                                path, 
-                                byref(line_num),  # FIX: Added byref here
-                                byref(num_line), 
-                                buf, 
-                                buffer_size
-                            )
-                        if ret == 0:
-                            if num_line.value == 0:
-                                logging.info(f"Download complete for {name}")
-                                break
-                            content = buf.value.decode('shift-jis', errors='replace')
-                            logging.info(f"{content}")
-                            logging.info(f"Read {num_line.value} lines from {name}")
-                            line_num.value += num_line.value
+                    ret = fwlib.cnc_upldpdf(self.handle, 0, path)
+                    logging.info(f"Upload result for {name}: {ret}")
 
-                        else:
-                            logging.error(f"Error reading file {name}: Return code {ret}")
+                    while True:
+                        chunk_size = 1024
+                        buf = create_string_buffer(chunk_size)
+                        len_to_read = c_long(chunk_size)
+
+                        ret_dl = fwlib.cnc_download(self.handle, byref(len_to_read), buf)
+
+                        if ret_dl == 0:
+                            logging.info(f"data :{ buf.value[:len_to_read.value].decode('utf-8', errors='ignore').strip()}")
+                        if ret_dl != 0:
+                            logging.error(f"Download failed for {name} with code: {ret_dl}")
                             break
+                    ret = fwlib.cnc_dwnend(self.handle)
+                    logging.info(f"Download end result for {name}: {ret}")
 
                     file_info = {
                         "name": name,
