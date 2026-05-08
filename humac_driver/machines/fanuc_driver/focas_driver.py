@@ -241,7 +241,27 @@ class FocasDriver(object):
                     except Exception as e:
                         name = "Unknown_Name"
                         comment = f"Decode Error: {e}"
+                    path = f"//DATA_SV/{name}\x00".encode('ascii', errors='replace')
+                    path_ptr = create_string_buffer(path)
+                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, path_ptr)
+                    logging.info(f'upstart result for {name} is {ret_upstart}')
+                    while True:
+                        time.sleep(0.2)
 
+                        buf = create_string_buffer(CNC.MAX_BLOCK)
+                        length = c_long(CNC.MAX_BLOCK) 
+
+                        ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
+                        logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
+                        if ret_upload == 0  and length.value > 0:
+                            block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
+                            logging.info(f"Block from {name}: {block}")
+
+                        if ret_upload != 0:
+                            logging.info(f"Finished reading {name} with result: {ret_upload}")
+                            break
+                    ret_end = fwlib.cnc_upend4(self.handle)
+                    logging.info(f"upend4 result for {name}: {ret_end}")
                     file_info = {
                         "name": name,
                         "type": "File" if pdf_out[i].data_kind == 1 else "Folder",
