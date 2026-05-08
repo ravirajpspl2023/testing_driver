@@ -399,7 +399,7 @@ class FocasDriver(object):
         if ret == 0:
             # Decode the name from shift-jis
             full_path = exe_prg.name.decode('shift-jis', errors='replace').strip('\x00')
-            o_number = exe_prg.o_num
+            o_number = exe_prg.oNumber
             
             logging.info(f"Current Path/File: {full_path}")
             logging.info(f"Current O-Number: {o_number}")
