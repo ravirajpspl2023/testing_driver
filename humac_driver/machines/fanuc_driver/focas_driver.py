@@ -243,7 +243,7 @@ class FocasDriver(object):
                         comment = f"Decode Error: {e}"
                     path = f"//DATA_SV/{name}".encode('shift-jis').strip(b'\x00') + b'\x00'  # Ensure null-terminated
                     path_ptr = create_string_buffer(path)
-
+                    logging.info(f"path_ptr for : {path_ptr.value}")
                     ret_upstart = fwlib.cnc_upstart4(self.handle, 0, path_ptr)
                     logging.info(f'upstart for {name} result is {ret_upstart}')
 
@@ -262,7 +262,7 @@ class FocasDriver(object):
 
                     ret_end = fwlib.cnc_upend4(self.handle)
                     logging.info(f"upend4 for {name} result: {ret_end}")
-                    
+
                     file_info = {
                         "name": name,
                         "type": "File" if pdf_out[i].data_kind == 1 else "Folder",
