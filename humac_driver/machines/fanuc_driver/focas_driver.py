@@ -241,13 +241,13 @@ class FocasDriver(object):
                     except Exception as e:
                         name = "Unknown_Name"
                         comment = f"Decode Error: {e}"
-                    path = f"//DATA_SV/{name}"  # Ensure null-terminated string
-                    name_ptr = ctypes.create_string_buffer(path.encode('shift-jis'))
-                    logging.info(f'pointer : {name_ptr.value}')
-                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
-                    logging.info(f'upstart result is {ret_upstart}')
-                    ret_end = fwlib.cnc_upend4(self.handle)
-                    logging.info(f"upend4 result: {ret_end}")
+                    # path = f"//DATA_SV/{name}"  # Ensure null-terminated string
+                    # name_ptr = ctypes.create_string_buffer(path.encode('shift-jis'))
+                    # logging.info(f'pointer : {name_ptr.value}')
+                    # ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
+                    # logging.info(f'upstart result is {ret_upstart}')
+                    # ret_end = fwlib.cnc_upend4(self.handle)
+                    # logging.info(f"upend4 result: {ret_end}")
 
                     logging.info(f"Download end result for {name}: {ret}")
 
@@ -396,25 +396,27 @@ class FocasDriver(object):
         # You can print it or assign it to a class variable
         logging.info(f"Program Info (ASCII): {data}")
 
-    def get_current_running_file(self):
-
-        logging.info("Getting current running program name...")
-
-        exe_prg = ODBEXEPRG()
+    def get_dnc_diagnosis(self,):
+        """
+        Reads DNC diagnosis data to see what the CNC is expecting.
+        """
+        dgndt = ODBDNCDGN()
+        ret = fwlib.cnc_rddncdgndt(self.handle, ctypes.byref(dgndt))
         
-        # cnc_exeprgname2 returns the full path and name
-        ret = fwlib.cnc_exeprgname2(self.handle, byref(exe_prg))
-        logging.info(f"Result from cnc_exeprgname2: {ret}")
         if ret == 0:
-            # Decode the name from shift-jis
-            full_path = exe_prg.name.decode('shift-jis', errors='replace').strip('\x00')
-            o_number = exe_prg.oNumber
-            
-            logging.info(f"Current Path/File: {full_path}")
-            logging.info(f"Current O-Number: {o_number}")
-            return full_path
+            # Decode the file name (Shift-JIS is standard for Fanuc)
+            try:
+                file_name = dgndt.nc_file.decode('shift-jis').strip('\x00')
+            except:
+                file_name = str(dgndt.nc_file)
+                
+            logging.info(f"--- DNC Diagnosis ---")
+            logging.info(f"CNC Requested File: {file_name}")
+            logging.info(f"Control Word: {dgndt.ctrl_word}")
+            logging.info(f"Total Size Transferred: {dgndt.total_size}")
+            # return dgndt
         else:
-            logging.error(f"Error getting program name: {ret}")
+            logging.error(f"Failed to read diagnosis. Error: {ret}")
             return None
 
     

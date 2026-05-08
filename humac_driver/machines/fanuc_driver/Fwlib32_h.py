@@ -449,3 +449,15 @@ class ODBNC(ctypes.Union):
         ("bin", ODBNC_BIN),             # For type=0 (Binary)
         ("asc", ctypes.c_char * 31),    # For type=1 (ASCII)
     ]
+
+
+class ODBDNCDGN(ctypes.Structure):
+    _fields_ = [
+        ("ctrl_word", ctypes.c_short),      # Operation demand from CNC
+        ("can_word", ctypes.c_short),       # Operation stop demand
+        ("nc_file", ctypes.c_char * 16),    # Program name (first 15 chars)
+        ("read_ptr", ctypes.c_ushort),      # Read pointer of DNC buffer
+        ("write_ptr", ctypes.c_ushort),     # Write pointer of DNC buffer
+        ("empty_cnt", ctypes.c_ushort),     # How many times buffer emptied
+        ("total_size", ctypes.c_ulong),     # Total characters output
+    ]
