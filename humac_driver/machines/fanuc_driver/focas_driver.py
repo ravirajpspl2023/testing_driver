@@ -246,10 +246,8 @@ class FocasDriver(object):
                     name_ptr = ctypes.create_string_buffer(path)
                     ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
                     logging.info(f'upstart result is {ret_upstart}')
-
                     ret_end = fwlib.cnc_upend4(self.handle)
                     logging.info(f"upend4 result: {ret_end}")
-
                     logging.info(f"Download end result for {name}: {ret}")
 
                     file_info = {
