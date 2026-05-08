@@ -388,11 +388,14 @@ class FocasDriver(object):
         logging.info(f"Program Info (ASCII): {data}")
 
     def get_current_running_file(self):
+
+        logging.info("Getting current running program name...")
+
         exe_prg = ODBEXEPRG()
         
         # cnc_exeprgname2 returns the full path and name
         ret = fwlib.cnc_exeprgname2(self.handle, byref(exe_prg))
-        
+        logging.info(f"Result from cnc_exeprgname2: {ret}")
         if ret == 0:
             # Decode the name from shift-jis
             full_path = exe_prg.name.decode('shift-jis', errors='replace').strip('\x00')
