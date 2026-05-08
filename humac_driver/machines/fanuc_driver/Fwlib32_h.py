@@ -461,3 +461,6 @@ class ODBDNCDGN(ctypes.Structure):
         ("empty_cnt", ctypes.c_ushort),     # How many times buffer emptied
         ("total_size", ctypes.c_ulong),     # Total characters output
     ]
+
+class ODBERR(ctypes.Structure):
+            _fields_ = [("err_no", ctypes.c_short), ("err_dtno", ctypes.c_short)]
