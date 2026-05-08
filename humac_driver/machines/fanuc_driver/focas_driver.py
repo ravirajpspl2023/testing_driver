@@ -241,27 +241,26 @@ class FocasDriver(object):
                     except Exception as e:
                         name = "Unknown_Name"
                         comment = f"Decode Error: {e}"
-                    path = f"//DATA_SV/{name}".encode('shift-jis').strip(b'\x00') + b'\x00'  # Ensure null-terminated
+                    path = f"//DATA_SV/{name}".encode('shift-jis').strip(b'\x00') # Ensure null-terminated
                     path_ptr = create_string_buffer(path)
-                    logging.info(f"path_ptr for : {path_ptr.value}")
-                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, path_ptr)
-                    logging.info(f'upstart for {name} result is {ret_upstart}')
-
+                    line_num = 0
+                    num_line = 100
+                    buffer_size = 1024 * 16
+                    buf = create_string_buffer(buffer_size)
+                    logging.info(f"Starting download for: {path}")
                     while True :
-                        buf = create_string_buffer(CNC.MAX_BLOCK)
-                        length = c_long(CNC.MAX_BLOCK)
+                        ret = fwlib.cnc_rdpdf_line(self.handle, path, line_num, byref(num_line), buf, buffer_size)
+                        if ret == 0:
+                            if num_line.value == 0:
+                                logging.info(f"Reached end of file: {name}")
+                                break
+                            content = buf.value.decode('shift-jis', errors='replace')
+                            logging.info(f"Read {num_line.value} lines from {name}")
+                            line_num.value += num_line.value
 
-                        ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)
-                        logging.info(f"Upload result for {name}: {ret_upload}, bytes read: {length.value}")
-                        if ret_upload == 0 and length.value > 0:
-                            block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
-                            logging.info(f"First block of {name}: {block}")
-                        elif ret_upload != 0 :
-                            logging.info(f"Finished reading {name} or error occurred. Ending upload.")
+                        else:
+                            logging.error(f"Error reading file {name}: Return code {ret}")
                             break
-
-                    ret_end = fwlib.cnc_upend4(self.handle)
-                    logging.info(f"upend4 for {name} result: {ret_end}")
 
                     file_info = {
                         "name": name,
