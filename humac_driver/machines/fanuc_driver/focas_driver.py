@@ -243,8 +243,8 @@ class FocasDriver(object):
                         comment = f"Decode Error: {e}"
                     path = f"//DATA_SV/{name}".encode('shift-jis').strip(b'\x00') # Ensure null-terminated
                     path_ptr = create_string_buffer(path)
-                    line_num = 0
-                    num_line = 100
+                    line_num = c_uint32(0)
+                    num_line = c_uint32(100)
                     buffer_size = 1024 * 16
                     buf = create_string_buffer(buffer_size)
                     logging.info(f"Starting download for: {path}")
