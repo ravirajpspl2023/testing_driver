@@ -427,6 +427,13 @@ class FocasDriver(object):
 
     def list_dataserver_files(self):
         # Initialize structures
+            blk_count = ctypes.c_short(1)
+            data_len = ctypes.c_long(100)
+            prog_data = ctypes.create_string_buffer(100)
+            
+            fwlib.cnc_rdexecprog(self.handle, byref(data_len), byref(blk_count), prog_data)
+            logging.info(f"Execution Hint: {prog_data.value.decode('shift-jis', errors='replace')}")
+
         # 1. Initialize structures for listing
             ds_file_in = IN_DSFILE()
             ds_info_out = OUT_DSINFO()
@@ -459,33 +466,11 @@ class FocasDriver(object):
                     # --- START DOWNLOAD FLOW ---
                     # 2. Start the transfer for this specific file
                     # Format usually requires //DATA_SV/ prefix
-                    remote_full_path = filename.encode('ascii')+ b'\00'  # Ensure encoding and null-termination
-                    full_path = ctypes.create_string_buffer(remote_full_path)
-                    user = ctypes.c_short(11)
-                    ret_start = fwlib.ds_dwnstart(self.handle, full_path,user)            
-                    if ret_start == 0:
-                        local_path = os.path.join(local_dir, filename)
-                        with open(local_path, 'wb') as f:
-                            while True:
-                                buffer = ctypes.create_string_buffer(1024)
-                                size = ctypes.c_long(1024)
-                                
-                                # 3. Download chunks of data
-                                ret_dl = fwlib.ds_download(self.handle, ctypes.byref(buffer), ctypes.byref(size))
-                                
-                                if ret_dl == 0: # Chunk received
-                                    f.write(buffer.raw[:size.value])
-                                elif ret_dl == 10: # EW_DTSR_END (Transfer complete)
-                                    logging.info(f"Successfully downloaded {filename}")
-                                    break
-                                else:
-                                    logging.error(f"Error during download chunk: {ret_dl}")
-                                    break
-                        
-                        # 4. End the transfer session
-                        fwlib.ds_dwnend(self.handle)
-                    else:
-                        logging.error(f"Could not start download for {filename}. Error: {ret_start}")
+                    remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace')  # Ensure encoding and null-termination
+                    logging.info(f"Remote path for download: {remote_full_path}")
+                    # full_path = ctypes.create_string_buffer(remote_full_path)
+                    # line_no = ctypes.c_ulong(0)
+                    # ret = fwlib.cnc_pdf_searchword(self.handle,full_path,)        
             else:
                 logging.error(f"Failed to list files. Error code: {ret}")
 
