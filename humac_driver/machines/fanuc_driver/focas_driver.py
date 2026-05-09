@@ -448,7 +448,7 @@ class FocasDriver(object):
 
         if ret == 0:
             logging.info(f"Total files on Data Server: {ds_info_out.total}")
-            for i in range(ds_info_out.fnum):
+            for i in range(ds_info_out.total):
                 logging.info(f"Found file: {ds_file_out[i].file.decode('ascii')}")
         else:
             logging.error(f"Failed to list files. Error code: {ret}")
