@@ -439,11 +439,12 @@ class FocasDriver(object):
         logging.info(f"Transferring {remote_filename} to {local_pc_path}...")
         
         # Use the dedicated Data Server Read function
-        ret = fwlib.cnc_dtsvrdfile(self.handle, remote_ptr, local_ptr)
-        
+        # ret = fwlib.cnc_dtsvrdfile(self.handle, remote_ptr, local_ptr)
+        ret = fwlib.ds_rdfile(self.handle, remote_ptr, local_ptr)
+
         if ret == 0:
             logging.info("Transfer successful!")
-        else:
+        else: 
             # Check detail error if it fails
             class ODBERR(ctypes.Structure):
                 _fields_ = [("err_no", ctypes.c_short), ("err_dtno", ctypes.c_short)]
