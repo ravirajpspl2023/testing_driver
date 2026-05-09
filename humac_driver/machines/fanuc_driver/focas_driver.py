@@ -473,12 +473,29 @@ class FocasDriver(object):
                     ret_upstart = fwlib.cnc_upstart4(self.handle, 0, b'')
 
                     err = ODBERR()
-
                     fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
-
                     logging.error(f"Detail Error for {filename}: err_no={err.err_no}, err_dtl={err.err_dtno}")
 
                     logging.info(f"Upstart result for {filename}: {ret_upstart}")
+
+                    while True:
+                        time.sleep(0.2)
+
+                        buf = create_string_buffer(CNC.MAX_BLOCK)
+                        length = c_long(CNC.MAX_BLOCK) 
+
+                        ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
+                        logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
+                        if ret_upload == 0  and length.value > 0:
+                            block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
+                            logging.info(f"blocks : {block}")
+                        elif ret_upload == -2:
+                            
+                            break
+
+                        elif ret_upload != 0 and ret_upload != -2:
+                            logging.error(f"Upload failed with code: {ret_upload}")
+                            break
 
                     end_ref = fwlib.cnc_upend4(self.handle) 
                     logging.info(f"Upend result for {filename}: {end_ref}")
