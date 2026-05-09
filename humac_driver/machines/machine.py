@@ -32,7 +32,7 @@ class Machine(mp.Process):
         try:           
             # programs = self.driver.get_cnc_program_details_ascii()
             # self.driver.get_all_program_names()
-            self.driver.check_ds_status()
+            self.driver.list_dataserver_files()
             # self.driver.get_dnc_diagnosis()
             # self.driver.check_execution_vs_main()
             # self.driver.get_hint_from_exec_block()
