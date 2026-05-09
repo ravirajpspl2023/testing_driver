@@ -462,7 +462,7 @@ class FocasDriver(object):
                     remote_full_path = filename.encode('ascii')+ b'\00'  # Ensure encoding and null-termination
                     full_path = ctypes.c_char_p(remote_full_path)
                     user = ctypes.c_short(11)
-                    ret_start = fwlib.ds_dwnstart(self.handle, byref(full_path),user)            
+                    ret_start = fwlib.ds_dwnstart(self.handle, full_path,user)            
                     if ret_start == 0:
                         local_path = os.path.join(local_dir, filename)
                         with open(local_path, 'wb') as f:
