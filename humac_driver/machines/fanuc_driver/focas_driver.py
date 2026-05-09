@@ -425,7 +425,7 @@ class FocasDriver(object):
             logging.error(f"Failed to read diagnosis. Error: {ret}")
             return None
 
-    def download_all_from_dataserver():
+    def download_all_from_dataserver(self,):
         cnc_ip = "192.168.0.2"  # Your CNC IP
         local_directory = "./humac"
         
