@@ -455,9 +455,9 @@ class FocasDriver(object):
 
             if ret == 0:
                 logging.info(f"Total files on Data Server: {ds_info_out.total}")
-                local_dir = "./humac"
-                if not os.path.exists(local_dir):
-                    os.makedirs(local_dir)
+                # local_dir = "./humac"
+                # if not os.path.exists(local_dir):
+                #     os.makedirs(local_dir)
 
                 for i in range(ds_info_out.total):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')
@@ -468,6 +468,14 @@ class FocasDriver(object):
                     # Format usually requires //DATA_SV/ prefix
                     remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace')  # Ensure encoding and null-termination
                     logging.info(f"Remote path for download: {remote_full_path}")
+                    buf_path = ctypes.create_string_buffer(remote_full_path)
+                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, buf_path)
+
+                    logging.info(f"Upstart result for {filename}: {ret_upstart}")
+
+                    end_ref = fwlib.cnc_upend4(self.handle) 
+                    logging.info(f"Upend result for {filename}: {end_ref}")
+
                     # full_path = ctypes.create_string_buffer(remote_full_path)
                     # line_no = ctypes.c_ulong(0)
                     # ret = fwlib.cnc_pdf_searchword(self.handle,full_path,)        
