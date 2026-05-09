@@ -461,8 +461,6 @@ class FocasDriver(object):
 
                 for i in range(ds_info_out.total):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')
-                    file_dir  = ds_info_out[i].dir.decode('ascii').strip('\x00')
-                    logging.info(f"dir: {file_dir}")
                     logging.info(f"Starting download for: {filename}")
 
                     # --- START DOWNLOAD FLOW ---
@@ -472,7 +470,7 @@ class FocasDriver(object):
                     end_line_path = remote_full_path + b'\x00'
                     logging.info(f"full path : {end_line_path}")
                     buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
-                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, buf_path)
+                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, b'')
 
                     err = ODBERR()
 
