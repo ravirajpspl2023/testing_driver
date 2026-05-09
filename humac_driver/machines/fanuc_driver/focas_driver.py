@@ -476,7 +476,7 @@ class FocasDriver(object):
 
                     fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
 
-                    logging.error(f"Detail Error for {filename}: err_no={err.err_no}, err_dtl={err.err_dtl}")
+                    logging.error(f"Detail Error for {filename}: err_no={err.err_no}, err_dtl={err.err_dtno}")
 
                     logging.info(f"Upstart result for {filename}: {ret_upstart}")
 
