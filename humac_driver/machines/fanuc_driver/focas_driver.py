@@ -472,6 +472,12 @@ class FocasDriver(object):
                     buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
                     ret_upstart = fwlib.cnc_upstart4(self.handle, 0, buf_path)
 
+                    err = ODBERR()
+
+                    fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
+
+                    logging.error(f"Detail Error for {filename}: err_no={err.err_no}, err_dtl={err.err_dtl}")
+
                     logging.info(f"Upstart result for {filename}: {ret_upstart}")
 
                     end_ref = fwlib.cnc_upend4(self.handle) 
