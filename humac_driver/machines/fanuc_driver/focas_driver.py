@@ -444,11 +444,11 @@ class FocasDriver(object):
                     local_path = os.path.join(local_directory, filename)
                     with open(local_path, 'wb') as f:
                         ftp.retrbinary(f"RETR {filename}", f.write)
-                    print(f"Downloaded: {filename}")
+                    logging.info(f"Downloaded: {filename}")
                     
             ftp.quit()
         except Exception as e:
-            print(f"FTP Error: {e}")
+            logging.error(f"FTP Error: {e}")
 
     
     def disconnect(self,):
