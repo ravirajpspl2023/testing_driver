@@ -468,7 +468,7 @@ class FocasDriver(object):
                     # Format usually requires //DATA_SV/ prefix
                     remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace') 
                     buf_path = ctypes.create_string_buffer(remote_full_path+b'\x00')  # Null-terminated path
-                    logging.info(f"full path : {buf_path}")
+                    logging.info(f"full path : {buf_path.value}")
                     ret_upstart = fwlib.cnc_upstart4(self.handle, 0, buf_path)
 
                     logging.info(f"Upstart result for {filename}: {ret_upstart}")
