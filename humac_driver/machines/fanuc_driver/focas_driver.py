@@ -466,9 +466,9 @@ class FocasDriver(object):
                     # --- START DOWNLOAD FLOW ---
                     # 2. Start the transfer for this specific file
                     # Format usually requires //DATA_SV/ prefix
-                    remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace')  # Ensure encoding and null-termination
-                    logging.info(f"Remote path for download: {remote_full_path}")
+                    remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace') 
                     buf_path = ctypes.create_string_buffer(remote_full_path+b'\x00')  # Null-terminated path
+                    logging.info(f"full path : {buf_path}")
                     ret_upstart = fwlib.cnc_upstart4(self.handle, 0, buf_path)
 
                     logging.info(f"Upstart result for {filename}: {ret_upstart}")
