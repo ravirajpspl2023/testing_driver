@@ -254,7 +254,7 @@ class FocasDriver(object):
                             logging.error(f"Error {ret_upstart}: Detail {err.err_no} (1:Path Error, 2:File Not Found)")
                         ret_end = fwlib.cnc_upend4(self.handle)
                         logging.info(f"upend4 result: {ret_end}")
-                        
+
                     file_info = {
                         "name": name,
                         "type": "File" if pdf_out[i].data_kind == 1 else "Folder",
@@ -422,6 +422,35 @@ class FocasDriver(object):
         else:
             logging.error(f"Failed to read diagnosis. Error: {ret}")
             return None
+
+    def download_from_dataserver(self,):
+        # Remote path on the CNC Data Server
+        # Ensure it matches exactly what you see: //DATA_SV/filename.tap
+
+        remote_filename = '//DATA_SV/1-52R6-FLAT-S1.tap'
+        local_pc_path = "./humac"  # Change to your desired local path
+        remote_path = f"//DATA_SV/{remote_filename}".encode('shift-jis')
+        remote_ptr = ctypes.create_string_buffer(remote_path)
+        
+        # Local path on your computer where you want to save it
+        local_path = local_pc_path.encode('shift-jis')
+        local_ptr = ctypes.create_string_buffer(local_path)
+        
+        logging.info(f"Transferring {remote_filename} to {local_pc_path}...")
+        
+        # Use the dedicated Data Server Read function
+        ret = fwlib.cnc_dtsvrdfile(self.handle, remote_ptr, local_ptr)
+        
+        if ret == 0:
+            logging.info("Transfer successful!")
+        else:
+            # Check detail error if it fails
+            class ODBERR(ctypes.Structure):
+                _fields_ = [("err_no", ctypes.c_short), ("err_dtno", ctypes.c_short)]
+            err = ODBERR()
+            fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
+            logging.error(f"Transfer failed. Error: {ret}, Detail: {err.err_no}")
+        return ret
 
     
     def disconnect(self,):
