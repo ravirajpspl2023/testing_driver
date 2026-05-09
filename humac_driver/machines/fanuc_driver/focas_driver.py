@@ -427,31 +427,67 @@ class FocasDriver(object):
 
     def list_dataserver_files(self):
         # Initialize structures
-        ds_file_in = IN_DSFILE()
-        ds_info_out = OUT_DSINFO()
-        ds_file_out = (OUT_DSFILE * 10)() # Request up to 10 files
+        # 1. Initialize structures for listing
+            ds_file_in = IN_DSFILE()
+            ds_info_out = OUT_DSINFO()
+            ds_file_out = (OUT_DSFILE * 10)() 
 
-        # Setup request
-        ds_file_in.path = b"" 
-        ds_file_in.req_num = 10
-        ds_file_in.size_type = 1 # Bytes
-        ds_file_in.detail = 0    # No comments
+            ds_file_in.path = b"" 
+            ds_file_in.req_num = 10
+            ds_file_in.size_type = 1 
+            ds_file_in.detail = 0    
 
-        # Call function (Note the 'byref' for parameters 3, 4, and 5)
-        ret = fwlib.cnc_rddsfile(
-            self.handle, 
-            b"DATA_SV", 
-            ctypes.byref(ds_file_in), 
-            ctypes.byref(ds_info_out), 
-            ctypes.byref(ds_file_out)
-        )
+            # Call listing function
+            ret = fwlib.cnc_rddsfile(
+                self.handle, 
+                b"DATA_SV", 
+                ctypes.byref(ds_file_in), 
+                ctypes.byref(ds_info_out), 
+                ctypes.byref(ds_file_out)
+            )
 
-        if ret == 0:
-            logging.info(f"Total files on Data Server: {ds_info_out.total}")
-            for i in range(ds_info_out.total):
-                logging.info(f"Found file: {ds_file_out[i].file.decode('ascii')}")
-        else:
-            logging.error(f"Failed to list files. Error code: {ret}")
+            if ret == 0:
+                logging.info(f"Total files on Data Server: {ds_info_out.total}")
+                local_dir = "./humac"
+                if not os.path.exists(local_dir):
+                    os.makedirs(local_dir)
+
+                for i in range(ds_info_out.total):
+                    filename = ds_file_out[i].file.decode('ascii').strip('\x00')
+                    logging.info(f"Starting download for: {filename}")
+
+                    # --- START DOWNLOAD FLOW ---
+                    # 2. Start the transfer for this specific file
+                    # Format usually requires //DATA_SV/ prefix
+                    remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis')  # Ensure encoding and null-termination
+                    full_path = create_string_buffer(remote_full_path)
+                    user = ctypes.c_short(11)
+                    ret_start = fwlib.ds_dwnstart(self.handle, byref(full_path),user)            
+                    if ret_start == 0:
+                        local_path = os.path.join(local_dir, filename)
+                        with open(local_path, 'wb') as f:
+                            while True:
+                                buffer = ctypes.create_string_buffer(1024)
+                                size = ctypes.c_long(1024)
+                                
+                                # 3. Download chunks of data
+                                ret_dl = fwlib.ds_download(self.handle, ctypes.byref(buffer), ctypes.byref(size))
+                                
+                                if ret_dl == 0: # Chunk received
+                                    f.write(buffer.raw[:size.value])
+                                elif ret_dl == 10: # EW_DTSR_END (Transfer complete)
+                                    logging.info(f"Successfully downloaded {filename}")
+                                    break
+                                else:
+                                    logging.error(f"Error during download chunk: {ret_dl}")
+                                    break
+                        
+                        # 4. End the transfer session
+                        fwlib.ds_dwnend(self.handle)
+                    else:
+                        logging.error(f"Could not start download for {filename}. Error: {ret_start}")
+            else:
+                logging.error(f"Failed to list files. Error code: {ret}")
 
     
     def disconnect(self,):
