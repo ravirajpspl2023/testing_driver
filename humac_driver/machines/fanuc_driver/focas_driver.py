@@ -461,7 +461,8 @@ class FocasDriver(object):
 
                 for i in range(ds_info_out.total):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')
-                    logging.info(f"dir: {ds_file_out[i].dir.decode('ascii').strip('\x00')}")
+                    file_dir  = ds_info_out[i].dir.decode('ascii').strip('\x00')
+                    logging.info(f"dir: {file_dir}")
                     logging.info(f"Starting download for: {filename}")
 
                     # --- START DOWNLOAD FLOW ---
