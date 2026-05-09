@@ -459,8 +459,8 @@ class FocasDriver(object):
                     # --- START DOWNLOAD FLOW ---
                     # 2. Start the transfer for this specific file
                     # Format usually requires //DATA_SV/ prefix
-                    remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis')  # Ensure encoding and null-termination
-                    full_path = create_string_buffer(remote_full_path)
+                    remote_full_path = filename.encode('ascii')+ b'\00'  # Ensure encoding and null-termination
+                    full_path = ctypes.c_char_p(remote_full_path)
                     user = ctypes.c_short(11)
                     ret_start = fwlib.ds_dwnstart(self.handle, byref(full_path),user)            
                     if ret_start == 0:
