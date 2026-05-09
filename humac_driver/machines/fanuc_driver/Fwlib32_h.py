@@ -466,7 +466,35 @@ class ODBERR(ctypes.Structure):
             _fields_ = [("err_no", ctypes.c_short), ("err_dtno", ctypes.c_short)]
 
 class IN_DSFILE(ctypes.Structure):
-    _fields_ = [("path", ctypes.c_char * 256), ("fnum", ctypes.c_long),
-                ("offset", ctypes.c_long), ("req_num", ctypes.c_short),
-                ("size_type", ctypes.c_short), ("detail", ctypes.c_short),
-                ("dummy", ctypes.c_short)]
+    _fields_ = [
+        ("path", ctypes.c_char * 256),
+        ("fnum", ctypes.c_long),
+        ("offset", ctypes.c_long),
+        ("req_num", ctypes.c_short),
+        ("size_type", ctypes.c_short),
+        ("detail", ctypes.c_short),
+        ("dummy", ctypes.c_short),
+    ]
+
+# Structure for General Info (Parameter 4 - This was your error)
+class OUT_DSINFO(ctypes.Structure):
+    _fields_ = [
+        ("type", ctypes.c_short),
+        ("dummy", ctypes.c_short),
+        ("fnum", ctypes.c_long),
+        ("total", ctypes.c_long),
+        ("remain_h", ctypes.c_ulong),
+        ("remain_l", ctypes.c_ulong),
+        ("dir", ctypes.c_char * 256),
+    ]
+
+# Structure for Individual File Data (Parameter 5)
+class OUT_DSFILE(ctypes.Structure):
+    _fields_ = [
+        ("year", ctypes.c_short), ("mon", ctypes.c_short), ("day", ctypes.c_short),
+        ("hour", ctypes.c_short), ("min", ctypes.c_short), ("sec", ctypes.c_short),
+        ("size", ctypes.c_long),
+        ("attr", ctypes.c_ulong),
+        ("file", ctypes.c_char * 36),
+        ("info", ctypes.c_char * 128),
+    ]

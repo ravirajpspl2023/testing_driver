@@ -425,15 +425,33 @@ class FocasDriver(object):
             logging.error(f"Failed to read diagnosis. Error: {ret}")
             return None
 
-    def check_ds_status(self,):
-        ds_in = IN_DSFILE()
-        ds_in.path = b""
-        ds_in.req_num = 1
-        # ds_info_out and ds_file_out would need structures defined here too
-        
-        # Just a test call to see if the device name "DATA_SV" is recognized
-        ret = fwlib.cnc_rddsfile(self.handle, b"DATA_SV", ctypes.byref(ds_in), ...)
-        logging.info(f"Data Server Check Return: {ret}")
+    def list_dataserver_files(self):
+        # Initialize structures
+        ds_file_in = IN_DSFILE()
+        ds_info_out = OUT_DSINFO()
+        ds_file_out = (OUT_DSFILE * 10)() # Request up to 10 files
+
+        # Setup request
+        ds_file_in.path = b"" 
+        ds_file_in.req_num = 10
+        ds_file_in.size_type = 1 # Bytes
+        ds_file_in.detail = 0    # No comments
+
+        # Call function (Note the 'byref' for parameters 3, 4, and 5)
+        ret = fwlib.cnc_rddsfile(
+            self.handle, 
+            b"DATA_SV", 
+            ctypes.byref(ds_file_in), 
+            ctypes.byref(ds_info_out), 
+            ctypes.byref(ds_file_out)
+        )
+
+        if ret == 0:
+            logging.info(f"Total files on Data Server: {ds_info_out.total}")
+            for i in range(ds_info_out.fnum):
+                logging.info(f"Found file: {ds_file_out[i].file.decode('ascii')}")
+        else:
+            logging.error(f"Failed to list files. Error code: {ret}")
 
     
     def disconnect(self,):
