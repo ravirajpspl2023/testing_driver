@@ -15,6 +15,8 @@ import datetime
 import logging
 from  multiprocessing  import Queue
 from humac_driver.const import *
+from ftplib import FTP
+import os
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 extradlls=[]
@@ -423,35 +425,30 @@ class FocasDriver(object):
             logging.error(f"Failed to read diagnosis. Error: {ret}")
             return None
 
-    def download_from_dataserver(self,):
-        # Remote path on the CNC Data Server
-        # Ensure it matches exactly what you see: //DATA_SV/filename.tap
+    def download_all_from_dataserver():
+        cnc_ip = "192.168.0.2"  # Your CNC IP
+        local_directory = "./humac"
+        
+        if not os.path.exists(local_directory):
+            os.makedirs(local_directory)
 
-        remote_filename = '//DATA_SV/1-52R6-FLAT-S1.tap'
-        local_pc_path = "./humac"  # Change to your desired local path
-        remote_path = f"//DATA_SV/{remote_filename}".encode('shift-jis')
-        remote_ptr = ctypes.create_string_buffer(remote_path)
-        
-        # Local path on your computer where you want to save it
-        local_path = local_pc_path.encode('shift-jis')
-        local_ptr = ctypes.create_string_buffer(local_path)
-        
-        logging.info(f"Transferring {remote_filename} to {local_pc_path}...")
-        
-        # Use the dedicated Data Server Read function
-        # ret = fwlib.cnc_dtsvrdfile(self.handle, remote_ptr, local_ptr)
-        ret = fwlib.ds_rdfile(self.handle, remote_ptr, local_ptr)
-
-        if ret == 0:
-            logging.info("Transfer successful!")
-        else: 
-            # Check detail error if it fails
-            class ODBERR(ctypes.Structure):
-                _fields_ = [("err_no", ctypes.c_short), ("err_dtno", ctypes.c_short)]
-            err = ODBERR()
-            fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
-            logging.error(f"Transfer failed. Error: {ret}, Detail: {err.err_no}")
-        return ret
+        try:
+            ftp = FTP(cnc_ip)
+            ftp.login("admin", "admin") # Common defaults, or check CNC settings
+            
+            # List all files
+            files = ftp.nlst() 
+            
+            for filename in files:
+                if filename.endswith(".tap") or filename.endswith(".txt"):
+                    local_path = os.path.join(local_directory, filename)
+                    with open(local_path, 'wb') as f:
+                        ftp.retrbinary(f"RETR {filename}", f.write)
+                    print(f"Downloaded: {filename}")
+                    
+            ftp.quit()
+        except Exception as e:
+            print(f"FTP Error: {e}")
 
     
     def disconnect(self,):
