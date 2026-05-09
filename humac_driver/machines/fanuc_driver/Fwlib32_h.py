@@ -464,3 +464,9 @@ class ODBDNCDGN(ctypes.Structure):
 
 class ODBERR(ctypes.Structure):
             _fields_ = [("err_no", ctypes.c_short), ("err_dtno", ctypes.c_short)]
+
+class IN_DSFILE(ctypes.Structure):
+    _fields_ = [("path", ctypes.c_char * 256), ("fnum", ctypes.c_long),
+                ("offset", ctypes.c_long), ("req_num", ctypes.c_short),
+                ("size_type", ctypes.c_short), ("detail", ctypes.c_short),
+                ("dummy", ctypes.c_short)]

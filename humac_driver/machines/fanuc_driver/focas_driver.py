@@ -425,30 +425,15 @@ class FocasDriver(object):
             logging.error(f"Failed to read diagnosis. Error: {ret}")
             return None
 
-    def download_all_from_dataserver(self,):
-        cnc_ip = "192.168.0.2"  # Your CNC IP
-        local_directory = "./humac"
+    def check_ds_status(self,):
+        ds_in = IN_DSFILE()
+        ds_in.path = b""
+        ds_in.req_num = 1
+        # ds_info_out and ds_file_out would need structures defined here too
         
-        if not os.path.exists(local_directory):
-            os.makedirs(local_directory)
-
-        try:
-            ftp = FTP(cnc_ip)
-            ftp.login("admin", "admin") # Common defaults, or check CNC settings
-            
-            # List all files
-            files = ftp.nlst() 
-            
-            for filename in files:
-                if filename.endswith(".tap") or filename.endswith(".txt"):
-                    local_path = os.path.join(local_directory, filename)
-                    with open(local_path, 'wb') as f:
-                        ftp.retrbinary(f"RETR {filename}", f.write)
-                    logging.info(f"Downloaded: {filename}")
-                    
-            ftp.quit()
-        except Exception as e:
-            logging.error(f"FTP Error: {e}")
+        # Just a test call to see if the device name "DATA_SV" is recognized
+        ret = fwlib.cnc_rddsfile(self.handle, b"DATA_SV", ctypes.byref(ds_in), ...)
+        logging.info(f"Data Server Check Return: {ret}")
 
     
     def disconnect(self,):
