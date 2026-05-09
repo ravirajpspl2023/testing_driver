@@ -428,8 +428,8 @@ class FocasDriver(object):
     def list_dataserver_files(self):
         # Initialize structures
             blk_count = ctypes.c_short(1)
-            data_len = ctypes.c_long(100)
-            prog_data = ctypes.create_string_buffer(100)
+            data_len = ctypes.c_long(500)
+            prog_data = ctypes.create_string_buffer(500)
             
             fwlib.cnc_rdexecprog(self.handle, byref(data_len), byref(blk_count), prog_data)
             logging.info(f"Execution Hint: {prog_data.value.decode('shift-jis', errors='replace')}")
