@@ -465,7 +465,7 @@ class FocasDriver(object):
                     # --- START DOWNLOAD FLOW ---
                     # 2. Start the transfer for this specific file
                     # Format usually requires //DATA_SV/ prefix
-                    remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
+                    remote_full_path = f"//DATA_SV/NCDATA/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
                     end_line_path = remote_full_path + b'\x00'
                     logging.info(f"full path : {end_line_path}")
                     buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
