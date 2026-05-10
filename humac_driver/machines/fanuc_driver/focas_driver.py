@@ -461,7 +461,8 @@ class FocasDriver(object):
 
                 for i in range(ds_info_out.total):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')
-                    logging.info(f"Starting download for: {filename}")
+                    info = ds_file_out[i].info.decode('ascii').strip('\x00')    
+                    logging.info(f"Starting download for: {filename}: {info}")
                     # --- START DOWNLOAD FLOW ---
                     # 2. Start the transfer for this specific file
                     # Format usually requires //DATA_SV/ prefix
