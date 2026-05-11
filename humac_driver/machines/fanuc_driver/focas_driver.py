@@ -465,7 +465,7 @@ class FocasDriver(object):
                     # --- START DOWNLOAD FLOW ---
                     # 2. Start the transfer for this specific file
                     # Format usually requires //DATA_SV/ prefix
-                    remote_full_path = f"//DATA_SV/NCDATA/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
+                    remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
                     end_line_path = remote_full_path + b'\x00'
                     logging.info(f"full path : {end_line_path}")
                     buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
@@ -510,7 +510,7 @@ class FocasDriver(object):
         device_name = b"DATA_SV\x00"  # Null-terminated device name (Shift-JIS encoding if needed)
         dev_buf = ctypes.create_string_buffer(device_name)
         # cnc_rddsdir(handle, path_buffer)
-        ret = fwlib.cnc_rddsdir(self.handle, dev_buf,3, path_buffer)
+        ret = fwlib.cnc_dsget_req(self.handle, dev_buf,3, path_buffer)
         
         if ret == 0:
             actual_path = path_buffer.value.decode('ascii')
