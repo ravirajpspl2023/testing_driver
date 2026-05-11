@@ -469,7 +469,7 @@ class FocasDriver(object):
                     end_line_path = remote_full_path + b'\x00'
                     logging.info(f"full path : {end_line_path}")
                     buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
-                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, buf_path)  # Start transfer
+                    ret_upstart = fwlib.cnc_upstart4(self.handle, 1, buf_path)  # Start transfer
 
                     err = ODBERR()
                     fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
@@ -505,12 +505,12 @@ class FocasDriver(object):
                 logging.error(f"Failed to list files. Error code: {ret}")
 
     def get_current_ds_path(self):
-        # Buffer तयार करा (256 characters)
-        path_buffer = ctypes.create_string_buffer(256)
-        device_name = b"DATA_SV\x00"  # Null-terminated device name (Shift-JIS encoding if needed)
-        dev_buf = ctypes.create_string_buffer(device_name)
-        # cnc_rddsdir(handle, path_buffer)
-        ret = fwlib.cnc_dsget_req(self.handle, dev_buf,3, path_buffer)
+        # 19-16EM-S2.tap
+
+        file_name = f"19-16em-s2.tap\x00".encode('ascii')  # Null-terminated string
+        path_buffer = ctypes.create_string_buffer(file_name)
+        
+        ret = fwlib.cnc_dsget_req(self.handle, path_buffer,0)
         
         if ret == 0:
             actual_path = path_buffer.value.decode('ascii')
