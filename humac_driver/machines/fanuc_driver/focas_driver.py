@@ -470,7 +470,7 @@ class FocasDriver(object):
                 #     # logging.info(f"full path : {end_line_path}")
 
                 buf_path = ctypes.create_string_buffer(b"//DATA_SV/19-16EM-S2.tap\x00")  # Null-terminated path
-                ret_upstart = fwlib.cnc_upstart4(self.handle, 0, buf_path)  # Start transfer
+                ret_upstart = fwlib.cnc_upstart4(self.handle, 0, b"")  # Start transfer
 
                 err = ODBERR()
                 fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
