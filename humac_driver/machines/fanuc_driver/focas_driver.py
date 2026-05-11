@@ -459,49 +459,49 @@ class FocasDriver(object):
                 # if not os.path.exists(local_dir):
                 #     os.makedirs(local_dir)
 
-                for i in range(ds_info_out.total):
-                    filename = ds_file_out[i].file.decode('ascii').strip('\x00')
-                    info = ds_file_out[i].info.decode('ascii').strip('\x00')    
-                    logging.info(f"Starting download for: {filename}: {info}")
-                    # --- START DOWNLOAD FLOW ---
-                    # 2. Start the transfer for this specific file
-                    # Format usually requires //DATA_SV/ prefix
-                    remote_full_path = f"//DATA_SV/NCDATA/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
-                    end_line_path = remote_full_path + b'\x00'
-                    logging.info(f"full path : {end_line_path}")
-                    buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
-                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0, buf_path)  # Start transfer
+                # for i in range(ds_info_out.total):
+                #     filename = ds_file_out[i].file.decode('ascii').strip('\x00')   
+                #     logging.info(f"Starting download for: {filename}")
+                #     # --- START DOWNLOAD FLOW ---
+                #     # 2. Start the transfer for this specific file
+                #     # Format usually requires //DATA_SV/ prefix
+                #     # remote_full_path = f"//DATA_SV/NCDATA/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
+                #     # end_line_path = remote_full_path + b'\x00'
+                #     # logging.info(f"full path : {end_line_path}")
 
-                    err = ODBERR()
-                    fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
-                    logging.error(f"Detail Error for {filename}: err_no={err.err_no}, err_dtl={err.err_dtno}")
+                buf_path = ctypes.create_string_buffer(b"//DATA_SV/19-16EM-S2.tap\x00")  # Null-terminated path
+                ret_upstart = fwlib.cnc_upstart4(self.handle, 0, buf_path)  # Start transfer
 
-                    logging.info(f"Upstart result for {filename}: {ret_upstart}")
+                err = ODBERR()
+                fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
+                logging.error(f"Detail Error for 19-16EM-S2.tap: err_no={err.err_no}, err_dtl={err.err_dtno}")
 
-                    while True:
-                        time.sleep(0.2)
-                        buf = create_string_buffer(CNC.MAX_BLOCK)
-                        length = c_long(CNC.MAX_BLOCK) 
+                logging.info(f"Upstart result for 19-16EM-S2.tap: {ret_upstart}")
 
-                        ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
-                        logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
-                        if ret_upload == 0  and length.value > 0:
-                            block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
-                            logging.info(f"blocks : {block}")
-                        elif ret_upload == -2:
-                            
-                            break
+                while True:
+                    time.sleep(0.2)
+                    buf = create_string_buffer(CNC.MAX_BLOCK)
+                    length = c_long(CNC.MAX_BLOCK) 
 
-                        elif ret_upload != 0 and ret_upload != -2:
-                            logging.error(f"Upload failed with code: {ret_upload}")
-                            break
+                    ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
+                    logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
+                    if ret_upload == 0  and length.value > 0:
+                        block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
+                        logging.info(f"blocks : {block}")
+                    elif ret_upload == -2:
+                        logging.info(f"Upload completed for 19-16EM-S2.tap")
+                        break
+
+                    elif ret_upload != 0 and ret_upload != -2:
+                        logging.error(f"Upload failed with code: {ret_upload}")
+                        break
 
                     end_ref = fwlib.cnc_upend4(self.handle) 
-                    logging.info(f"Upend result for {filename}: {end_ref}")
+                    logging.info(f"Upend result for 19-16EM-S2.tap: {end_ref}")
 
-                    full_path = ctypes.create_string_buffer(remote_full_path)
-                    line_no = ctypes.c_ulong(0)
-                    ret = fwlib.cnc_pdf_searchword(self.handle,full_path,)        
+                    # full_path = ctypes.create_string_buffer(remote_full_path)
+                    # line_no = ctypes.c_ulong(0)
+                    # ret = fwlib.cnc_pdf_searchword(self.handle,full_path,)        
             else:
                 logging.error(f"Failed to list files. Error code: {ret}")
 
