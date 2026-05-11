@@ -514,7 +514,7 @@ class FocasDriver(object):
         
         if ret == 0:
             actual_path = path_buffer.value.decode('ascii')
-            logging.info(f"मशीनवरील खरा फोल्डर पाथ: {actual_path}")
+            logging.info(f"path : {actual_path}")
             return actual_path
         else:
             logging.error(f"error : {ret}")
