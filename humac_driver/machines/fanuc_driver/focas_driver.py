@@ -507,15 +507,17 @@ class FocasDriver(object):
     def get_current_ds_path(self):
         # Buffer तयार करा (256 characters)
         path_buffer = ctypes.create_string_buffer(256)
+        device_name = b"DATA_SV\x00"  # Null-terminated device name (Shift-JIS encoding if needed)
+        dev_buf = ctypes.create_string_buffer(device_name)
         # cnc_rddsdir(handle, path_buffer)
-        ret = fwlib.cnc_rddsdir(self.handle, path_buffer)
+        ret = fwlib.cnc_rddsdir(self.handle, dev_buf,3, path_buffer)
         
         if ret == 0:
             actual_path = path_buffer.value.decode('ascii')
             logging.info(f"मशीनवरील खरा फोल्डर पाथ: {actual_path}")
             return actual_path
         else:
-            logging.error(f"पाथ शोधताना एरर आली: {ret}")
+            logging.error(f"error : {ret}")
             return None
 
     
