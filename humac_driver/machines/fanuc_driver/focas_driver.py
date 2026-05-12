@@ -508,17 +508,14 @@ class FocasDriver(object):
                 logging.error(f"Failed to list files. Error code: {ret}")
 
     def get_current_ds_path(self):
-        # 19-16EM-S2.tap
 
-        file_name = f"19-16em-s2.tap\x00".encode('ascii')  # Null-terminated string
-        path_buffer = ctypes.create_string_buffer(file_name)
-        
-        ret = fwlib.cnc_dsget_req(self.handle, path_buffer,0)
+        cur_dir = ctypes.create_string_buffer(256)
+        ret = fwlib.cnc_rdpdf_curdir(self.handle, 2 ,cur_dir)
         
         if ret == 0:
-            actual_path = path_buffer.value.decode('ascii')
+            actual_path = cur_dir.value.decode('ascii')
             logging.info(f"path : {actual_path}")
-            return actual_path
+            
         else:
             logging.error(f"error : {ret}")
             return None
