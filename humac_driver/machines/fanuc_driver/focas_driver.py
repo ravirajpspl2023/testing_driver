@@ -466,10 +466,10 @@ class FocasDriver(object):
                     # 2. Start the transfer for this specific file
                     # Format usually requires //DATA_SV/ prefix
                     remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
-                    end_line_path = remote_full_path + b'\x00'
+                    end_line_path = remote_full_path +b'O0001'+ b'\x00'
                     logging.info(f"full path : {end_line_path}")
                     buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
-                    ret_upstart = fwlib.cnc_upstart4(self.handle, 7, buf_path)  # Start transfer
+                    ret_upstart = fwlib.cnc_upstart4(self.handle, 0 , buf_path)  # Start transfer
 
                     err = ODBERR()
                     fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
