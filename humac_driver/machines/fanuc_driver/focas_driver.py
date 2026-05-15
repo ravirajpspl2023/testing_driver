@@ -148,6 +148,10 @@ class FocasDriver(object):
                             self.redis.xadd("program",data)
                             logging.info(f"Final program chunk {chunk} sent to Redis ")
                         break
+                    elif ret_upload == -1 :
+                        logging.warning(f"Upload busy, retrying... (Code: {ret_upload})")
+                        time.sleep(0.5)  # Wait before retrying
+                        continue
 
                     elif ret_upload != 0 and ret_upload != -2:
                         logging.error(f"Upload failed with code: {ret_upload}")
