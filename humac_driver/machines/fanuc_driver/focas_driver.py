@@ -480,7 +480,7 @@ class FocasDriver(object):
                         #b' //DATA_SV/xw20.nc\x00
                         logging.info(f"full path : {end_line_path}")
                         buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
-                        ret_upstart = fwlib.cnc_fileread_start(self.handle, 0 , buf_path)  # Start transfer
+                        ret_upstart = fwlib.cnc_upstart4(self.handle, 0 , buf_path)  # Start transfer
 
                         err = ODBERR()
                         fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
@@ -493,7 +493,7 @@ class FocasDriver(object):
                             buf = create_string_buffer(CNC.MAX_BLOCK)
                             length = c_long(CNC.MAX_BLOCK) 
 
-                            ret_upload = fwlib.cnc_fileread(self.handle, byref(length), buf)     
+                            ret_upload = fwlib.cnc_upload4(self.handle, byref(length), buf)     
                             logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
                             if ret_upload == 0  and length.value > 0:
                                 block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
@@ -506,7 +506,7 @@ class FocasDriver(object):
                                 logging.error(f"Upload failed with code: {ret_upload}")
                                 break
 
-                        end_ref = fwlib.cnc_fileread_end(self.handle) 
+                        end_ref = fwlib.cnc_upend4(self.handle) 
                         logging.info(f"Upend result for {filename}: {end_ref}")
 
             else:
