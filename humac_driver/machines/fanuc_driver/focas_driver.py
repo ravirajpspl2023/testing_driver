@@ -523,10 +523,16 @@ class FocasDriver(object):
             # ३. मशीन जो पाथ वापरात आहे तो प्रिंट करा
             current_path = dir_buffer.value.decode('ascii', errors='replace')
             logging.info(f"Data Server M198 Active Directory Path: {current_path}")
-            return current_path
         else:
-            logging.error(f"Failed to read M198 directory. Error code: {ret}")
-            return None
+            logging.error(f"eth_rddsm198dir error { ret}")
+        
+        host = ctypes.create_string_buffer(255)
+        path = ctypes.create_string_buffer(255)
+        ret = fwlib.eth_rddsm198host(self.handle,1,host,path)
+        if ret == 0:
+            logging.info(f"host: { host.value.decode('ascii')} , path : {path.value.decode('ascii')}")
+        else: 
+            logging.error(f"eth_rddsm198host error :  {ret}")
 
     
     def disconnect(self,):
