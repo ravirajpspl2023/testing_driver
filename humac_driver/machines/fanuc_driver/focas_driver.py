@@ -517,7 +517,7 @@ class FocasDriver(object):
         dir_buffer = ctypes.create_string_buffer(256)
         
         # २. फंक्शन कॉल करा
-        ret = fwlib.eth_rddsm198dir(self.handle, dir_buffer)
+        ret = fwlib.eth_rddsm198dir(self.handle, 1, dir_buffer)
         
         if ret == 0:
             # ३. मशीन जो पाथ वापरात आहे तो प्रिंट करा
