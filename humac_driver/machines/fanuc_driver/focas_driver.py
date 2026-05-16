@@ -512,17 +512,20 @@ class FocasDriver(object):
             else:
                 logging.error(f"Failed to list files. Error code: {ret}")
 
-    def get_current_ds_path(self):
-
-        cur_dir = ctypes.create_string_buffer(256)
-        ret = fwlib.cnc_rdpdf_curdir(self.handle, 2 ,cur_dir)
+    def check_m198_directory(self):
+        # १. पाथ स्टोअर करण्यासाठी २५६ बाईट्सचा बफर तयार करा
+        dir_buffer = ctypes.create_string_buffer(256)
+        
+        # २. फंक्शन कॉल करा
+        ret = fwlib.eth_rddsm198dir(self.handle, dir_buffer)
         
         if ret == 0:
-            actual_path = cur_dir.value.decode('ascii')
-            logging.info(f"path : {actual_path}")
-            
+            # ३. मशीन जो पाथ वापरात आहे तो प्रिंट करा
+            current_path = dir_buffer.value.decode('ascii', errors='replace')
+            logging.info(f"Data Server M198 Active Directory Path: {current_path}")
+            return current_path
         else:
-            logging.error(f"error : {ret}")
+            logging.error(f"Failed to read M198 directory. Error code: {ret}")
             return None
 
     
