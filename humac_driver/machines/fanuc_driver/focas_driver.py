@@ -468,9 +468,9 @@ class FocasDriver(object):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')   
                     logging.info(f"Starting download for: {filename}")
 
-                    # if filename == '31-50R08_OUTER_S1.tap':
+                    if filename == '31-50R08_OUTER_S1.tap':
                         
-                    #     self.download_raw_file(filename)
+                        self.download_raw_file(filename)
                         # old_n = ctypes.create_string_buffer(filename.encode('ascii') + b'\x00')
                         # new_n = ctypes.create_string_buffer('15-10R1_S1.nc'.encode('ascii') + b'\x00')
                         # ret = fwlib.cnc_dsrename(self.handle, b'DATA_SV', old_n, new_n)
@@ -520,7 +520,7 @@ class FocasDriver(object):
         ds_file = filename.encode('ascii') + b'\x00'  # "57-6BALL_F_S1.tap"
         
         # २. कॉम्प्युटरवर किंवा CNC मेमरीमध्ये ज्या नावाने सेव्ह करायचे आहे ते नाव
-        local_cnc_file = filename.encode('ascii') + b'\x00'  # Null-terminated local name (e.g., "downloaded_file.tap")
+        local_cnc_file = f"//CNC_MEM/USER/{filename}".encode('ascii') + b'\x00'  # Null-terminated local name (e.g., "downloaded_file.tap")
 
         logging.info(f"Requesting direct file download for: {filename}")
         
