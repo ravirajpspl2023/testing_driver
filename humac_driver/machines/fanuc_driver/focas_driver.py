@@ -451,7 +451,7 @@ class FocasDriver(object):
             # Call listing function
             ret = fwlib.cnc_rddsfile(
                 self.handle, 
-                b"CNC_MEM", 
+                b"DATA_SV", 
                 ctypes.byref(ds_file_in), 
                 ctypes.byref(ds_info_out), 
                 ctypes.byref(ds_file_out)
