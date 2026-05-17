@@ -108,7 +108,7 @@ class FocasDriver(object):
                 # # Correct path – try without extra '/' or with 'MEMORY/' if DATA_SV fails
                 # name_str = f"//DATA_SV/{CNC.PROGRAME_NAME}"  # or "DATA_SV/lb44.nc" try kara
                 # name_bytes = buf.value.rstrip(b'\x00') + b'\x00'
-                path = f"//CNC_MEM/USER/O1".encode('ascii') + b'\x00'
+                path = f"//CNC_MEM/USER/31-50R08_OUTER_S1.tap".encode('ascii') + b'\x00'
                 logging.info(f"Encoded program path: {path}")
 
                 name_ptr = ctypes.create_string_buffer(path)
@@ -468,9 +468,9 @@ class FocasDriver(object):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')   
                     logging.info(f"Starting download for: {filename}")
 
-                    if filename == '31-50R08_OUTER_S1.tap':
+                    # if filename == '31-50R08_OUTER_S1.tap':
                         
-                        self.download_raw_file(filename)
+                    #     self.download_raw_file(filename)
                         # old_n = ctypes.create_string_buffer(filename.encode('ascii') + b'\x00')
                         # new_n = ctypes.create_string_buffer('15-10R1_S1.nc'.encode('ascii') + b'\x00')
                         # ret = fwlib.cnc_dsrename(self.handle, b'DATA_SV', old_n, new_n)
