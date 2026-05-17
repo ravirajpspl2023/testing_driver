@@ -468,6 +468,7 @@ class FocasDriver(object):
                     logging.info(f"Starting download for: {filename}")
 
                     if filename == '22-6R1_S1.tap':
+                        self.download_raw_file(filename)
                         # old_n = ctypes.create_string_buffer(filename.encode('ascii') + b'\x00')
                         # new_n = ctypes.create_string_buffer('15-10R1_S1.nc'.encode('ascii') + b'\x00')
                         # ret = fwlib.cnc_dsrename(self.handle, b'DATA_SV', old_n, new_n)
@@ -475,36 +476,36 @@ class FocasDriver(object):
                         # --- START DOWNLOAD FLOW ---
                         # 2. Start the transfer for this specific file
                         # Format usually requires //DATA_SV/ prefix
-                        remote_full_path = f"//DATA_SV/{filename}/O1".encode('shift-jis',errors='replace').rstrip(b'\x00')
-                        end_line_path = remote_full_path + b'\x00'
-                        #b' //DATA_SV/xw20.nc\x00
-                        logging.info(f"full path : {end_line_path}")
-                        buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
-                        ret_upstart = fwlib.cnc_fileread_start(self.handle, 0 , buf_path)  # Start transfer
+                        # remote_full_path = f"//DATA_SV/{filename}/O1".encode('shift-jis',errors='replace').rstrip(b'\x00')
+                        # end_line_path = remote_full_path + b'\x00'
+                        # #b' //DATA_SV/xw20.nc\x00
+                        # logging.info(f"full path : {end_line_path}")
+                        # buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
+                        # ret_upstart = fwlib.cnc_fileread_start(self.handle, 0 , buf_path)  # Start transfer
 
-                        err = ODBERR()
-                        fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
-                        logging.error(f"Detail Error for {filename}: err_no={err.err_no}, err_dtl={err.err_dtno}")
+                        # err = ODBERR()
+                        # fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
+                        # logging.error(f"Detail Error for {filename}: err_no={err.err_no}, err_dtl={err.err_dtno}")
 
-                        logging.info(f"Upstart result for {filename}: {ret_upstart}")
+                        # logging.info(f"Upstart result for {filename}: {ret_upstart}")
 
-                        while True:
-                            time.sleep(0.2)
-                            buf = create_string_buffer(CNC.MAX_BLOCK)
-                            length = c_long(CNC.MAX_BLOCK) 
+                        # while True:
+                        #     time.sleep(0.2)
+                        #     buf = create_string_buffer(CNC.MAX_BLOCK)
+                        #     length = c_long(CNC.MAX_BLOCK) 
 
-                            ret_upload = fwlib.cnc_fileread(self.handle, byref(length), buf)     
-                            logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
-                            if ret_upload == 0  and length.value > 0:
-                                block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
-                                logging.info(f"blocks : {block}")
-                            elif ret_upload == -2:
+                        #     ret_upload = fwlib.cnc_fileread(self.handle, byref(length), buf)     
+                        #     logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
+                        #     if ret_upload == 0  and length.value > 0:
+                        #         block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
+                        #         logging.info(f"blocks : {block}")
+                        #     elif ret_upload == -2:
                                 
-                                break
+                        #         break
 
-                            elif ret_upload != 0 and ret_upload != -2:
-                                logging.error(f"Upload failed with code: {ret_upload}")
-                                break
+                        #     elif ret_upload != 0 and ret_upload != -2:
+                        #         logging.error(f"Upload failed with code: {ret_upload}")
+                        #         break
 
                         end_ref = fwlib.cnc_fileread_end(self.handle) 
                         logging.info(f"Upend result for {filename}: {end_ref}")
@@ -512,27 +513,24 @@ class FocasDriver(object):
             else:
                 logging.error(f"Failed to list files. Error code: {ret}")
 
-    def check_m198_directory(self):
-        # १. पाथ स्टोअर करण्यासाठी २५६ बाईट्सचा बफर तयार करा
-        dir_buffer = ctypes.create_string_buffer(256)
+    def download_raw_file(self, filename):
+        # १. डेटा सर्व्हरवरील मूळ फाईलचे नाव (जसे आहे तसे एक्सटेंशनसह)
+        ds_file = filename.encode('ascii') + b'\x00'  # "57-6BALL_F_S1.tap"
         
-        # २. फंक्शन कॉल करा
-        ret = fwlib.eth_rddsm198dir(self.handle, 1, dir_buffer)
+        # २. कॉम्प्युटरवर किंवा CNC मेमरीमध्ये ज्या नावाने सेव्ह करायचे आहे ते नाव
+        local_cnc_file = filename.encode('ascii') + b'\x00'  # Null-terminated local name (e.g., "downloaded_file.tap")
+
+        logging.info(f"Requesting direct file download for: {filename}")
+        
+        # ३. cnc_dsget_req कॉल करा (हा ओ-नंबर मॅच करत नाही, थेट बाहेरचे नाव शोधतो)
+        # Arguments: handle, host_file_name, cnc_file_name, attribute(0)
+        ret = fwlib.cnc_dsget_req(self.handle, ds_file, local_cnc_file, 0)
         
         if ret == 0:
-            # ३. मशीन जो पाथ वापरात आहे तो प्रिंट करा
-            current_path = dir_buffer.value.decode('ascii', errors='replace')
-            logging.info(f"Data Server M198 Active Directory Path: {current_path}")
+            logging.info("Success! File transfer started in background by Name.")
+            # यानंतर तुम्ही नेहमीच्या पद्धतीने O9999 मेमरीमधून रीड करू शकता.
         else:
-            logging.error(f"eth_rddsm198dir error { ret}")
-        
-        host = ctypes.create_string_buffer(255)
-        path = ctypes.create_string_buffer(255)
-        ret = fwlib.eth_rddsm198host(self.handle,1,host,path)
-        if ret == 0:
-            logging.info(f"host: { host.value.decode('ascii')} , path : {path.value.decode('ascii')}")
-        else: 
-            logging.error(f"eth_rddsm198host error :  {ret}")
+            logging.error(f"Failed! Code: {ret}")
 
     
     def disconnect(self,):
