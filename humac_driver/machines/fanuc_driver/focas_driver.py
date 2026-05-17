@@ -108,9 +108,10 @@ class FocasDriver(object):
                 # # Correct path – try without extra '/' or with 'MEMORY/' if DATA_SV fails
                 # name_str = f"//DATA_SV/{CNC.PROGRAME_NAME}"  # or "DATA_SV/lb44.nc" try kara
                 name_bytes = buf.value.rstrip(b'\x00') + b'\x00'
-                logging.info(f"Encoded program path: {name_bytes}")
+                path = f"//CNC_MEM/57-6BALL_F_S1.tap".encode('ascii') + b'\x00'
+                logging.info(f"Encoded program path: {path}")
 
-                name_ptr = ctypes.create_string_buffer(name_bytes)
+                name_ptr = ctypes.create_string_buffer(path)
 
                 # cnc_upstart4
                 ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
