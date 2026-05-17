@@ -467,9 +467,9 @@ class FocasDriver(object):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')   
                     logging.info(f"Starting download for: {filename}")
 
-                    # if filename == '22-6R1_S1.tap':
+                    if filename == '22-6R1_S1.tap':
                         
-                        # self.download_raw_file(filename)
+                        self.download_raw_file(filename)
                         # old_n = ctypes.create_string_buffer(filename.encode('ascii') + b'\x00')
                         # new_n = ctypes.create_string_buffer('15-10R1_S1.nc'.encode('ascii') + b'\x00')
                         # ret = fwlib.cnc_dsrename(self.handle, b'DATA_SV', old_n, new_n)
