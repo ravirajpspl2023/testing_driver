@@ -451,7 +451,8 @@ class FocasDriver(object):
             # Call listing function
             ret = fwlib.cnc_rddsfile(
                 self.handle, 
-                b"DATA_SV", 
+                # b"DATA_SV",
+                b'CNC_MEM', 
                 ctypes.byref(ds_file_in), 
                 ctypes.byref(ds_info_out), 
                 ctypes.byref(ds_file_out)
@@ -468,7 +469,7 @@ class FocasDriver(object):
                     logging.info(f"Starting download for: {filename}")
 
                     if filename == '22-6R1_S1.tap':
-                        self.download_raw_file(filename)
+                        # self.download_raw_file(filename)
                         # old_n = ctypes.create_string_buffer(filename.encode('ascii') + b'\x00')
                         # new_n = ctypes.create_string_buffer('15-10R1_S1.nc'.encode('ascii') + b'\x00')
                         # ret = fwlib.cnc_dsrename(self.handle, b'DATA_SV', old_n, new_n)
@@ -527,7 +528,7 @@ class FocasDriver(object):
         ret = fwlib.cnc_dsget_req(self.handle, ds_file, local_cnc_file, 0)
         
         if ret == 0:
-            logging.info("Success! File transfer started in background by Name.")
+            logging.info("Success! File transfer started in background by Name ")
             # यानंतर तुम्ही नेहमीच्या पद्धतीने O9999 मेमरीमधून रीड करू शकता.
         else:
             logging.error(f"Failed! Code: {ret}")
