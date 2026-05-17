@@ -533,6 +533,12 @@ class FocasDriver(object):
         else:
             logging.error(f"Failed! Code: {ret}")
 
+        ret = fwlib.cnc_dsftpcancel(self.handle)
+
+        if ret == 0:
+            logging.info(f'ftp file stop file transfer successfully{ret}')
+        else:
+            logging.error(f'ftp file stop file transfer failed with code {ret}')
     
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
