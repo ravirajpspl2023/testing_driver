@@ -35,7 +35,6 @@ class Machine(mp.Process):
             # self.driver.get_current_ds_path()
             # self.driver.get_dnc_diagnosis()
             self.driver.list_dataserver_files()
-            self.driver.check_m198_directory()
             # self.driver.check_execution_vs_main()
             # self.driver.get_hint_from_exec_block()
 

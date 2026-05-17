@@ -507,8 +507,8 @@ class FocasDriver(object):
                         #         logging.error(f"Upload failed with code: {ret_upload}")
                         #         break
 
-                        end_ref = fwlib.cnc_fileread_end(self.handle) 
-                        logging.info(f"Upend result for {filename}: {end_ref}")
+                        # end_ref = fwlib.cnc_fileread_end(self.handle) 
+                        # logging.info(f"Upend result for {filename}: {end_ref}")
 
             else:
                 logging.error(f"Failed to list files. Error code: {ret}")
