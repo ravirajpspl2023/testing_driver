@@ -18,16 +18,24 @@ services:
       options:
         max-size: "20m"
 
-  redis:
+redis:
     image: redis:7-alpine
     container_name: redis_database
     restart: always
-    ports:
-      - "6379:6379"
     network_mode: host
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: >
+      redis-server 
+      --appendonly yes 
+      --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 64mb
+      --maxmemory 256mb 
+      --maxmemory-policy allkeys-lru
+      --save 60 1000          # RDB hybrid sathi
+      --save 300 100
+      --dir /data
     logging:
       driver: "json-file"
       options:

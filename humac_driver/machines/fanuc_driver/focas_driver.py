@@ -106,10 +106,10 @@ class FocasDriver(object):
             if result == 0 :
                 # logging.info(f"result: {result} value: {buf.value}")
                 # # Correct path – try without extra '/' or with 'MEMORY/' if DATA_SV fails
-                # name_str = f"//DATA_SV/{CNC.PROGRAME_NAME}"  # or "DATA_SV/lb44.nc" try kara
-                # name_bytes = buf.value.rstrip(b'\x00') + b'\x00'
-                path = f"//CNC_MEM/USER/1"
-                name_ptr = ctypes.create_string_buffer(path.encode('shift-jis'))
+                name_str = f"//DATA_SV/{CNC.PROGRAME_NAME}"  # or "DATA_SV/lb44.nc" try kara
+                name_bytes = buf.value.rstrip(b'\x00') + b'\x00'
+                # path = f"//CNC_MEM/USER/1"
+                name_ptr = ctypes.create_string_buffer(name_bytes)
                 logging.info(f"Encoded program path: {name_ptr.value}")
 
                 # cnc_upstart4
@@ -219,216 +219,6 @@ class FocasDriver(object):
             # return dict(zip(method_names, results))
 
 
-    
-    def get_all_program_names(self):
-        pdf_in = IDBPDFADIR()
-        pdf_in.path = b"//DATA_SV/" 
-        pdf_in.req_num = 0               
-        pdf_in.size_kind = 1             
-        pdf_in.type = 1                  
-        
-        num_to_read = c_short(10)
-        pdf_out = (ODBPDFADIR * 10)()    
-        
-        programs_list = []
-        
-        while True:
-            ret = fwlib.cnc_rdpdf_alldir(self.handle, byref(num_to_read), byref(pdf_in), byref(pdf_out))
-            
-            if ret == 0:
-                if num_to_read.value == 0:
-                    break
-                    
-                for i in range(num_to_read.value):
-                    # FIX: Use shift-jis and errors='replace' to handle special characters
-                    try:
-                        name = pdf_out[i].d_f.split(b'\x00')[0].decode('shift-jis', errors='replace')
-                        comment = pdf_out[i].comment.split(b'\x00')[0].decode('shift-jis', errors='replace')
-                    except Exception as e:
-                        name = "Unknown_Name"
-                        comment = f"Decode Error: {e}"
-                    path_sv = f"//DATA_SV/{name}"  # Ensure null-terminated string
-                    paths = [name,path_sv]
-                    for path in paths:
-                        name_ptr = ctypes.create_string_buffer(path.encode('shift-jis'))
-                        logging.info(f'pointer : {name_ptr.value}')
-                        ret_upstart = fwlib.cnc_upstart4(self.handle, 0, name_ptr)  # No extra arg
-                        logging.info(f'upstart result is {ret_upstart}')
-                        if ret_upstart != 0:
-                            err = ODBERR()
-                            fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
-                            logging.error(f"Error {ret_upstart}: Detail {err.err_no} (1:Path Error, 2:File Not Found)")
-                        ret_end = fwlib.cnc_upend4(self.handle)
-                        logging.info(f"upend4 result: {ret_end}")
-
-                    file_info = {
-                        "name": name,
-                        "type": "File" if pdf_out[i].data_kind == 1 else "Folder",
-                        "size": pdf_out[i].size,
-                        "comment": comment,
-                    }
-                    programs_list.append(file_info)
-                    logging.info(f"Found: {file_info['name']} - {file_info['comment']}")
-                
-                pdf_in.req_num += num_to_read.value
-            else:
-                logging.error(f"Error reading directory: {ret}")
-                break
-        logging.info(f"Found programs: {programs_list}")
-
-    def check_execution_vs_main(self):
-        # 1. Get Selected Main Program
-        main_buf = ctypes.create_string_buffer(244)
-        
-        fwlib.cnc_pdf_rdmain(self.handle, byref(main_buf))
-        main_path = main_buf.value.decode('shift-jis').split('\x00')[0]
-
-        # 2. Get Currently Executing Program
-        exe_buf = ctypes.create_string_buffer(244)
-        fwlib.cnc_exeprgname(self.handle, byref(exe_buf))
-        exe_path = exe_buf.value.decode('shift-jis').split('\x00')[0]
-
-        logging.info(f"Main Selected: {main_path}")
-        logging.info(f"Actually Running: {exe_path}")
-
-
-    def get_hint_from_exec_block(self):
-        # Reads the actual lines of code being run
-        # Reference: https://www.inventcom.net/fanuc-focas-library/Program/cnc_rdexecprog
-        blk_count = ctypes.c_short(1)
-        data_len = ctypes.c_long(100)
-        prog_data = ctypes.create_string_buffer(100)
-        
-        fwlib.cnc_rdexecprog(self.handle, byref(data_len), byref(blk_count), prog_data)
-        logging.info(f"Execution Hint: {prog_data.value.decode('shift-jis', errors='replace')}")
-
-    def search_text_in_dataserver(self):
-        """
-        Searches for a specific word in a list of files on the DATA_SV drive.
-        Returns the filename if found, else None.
-        """
-        file_list = [{'name': '1-52R6_S1.tap', 'type': 'File', 'size': 1978000, 'comment': ''}, {'name': '10-25R5_S1.tap', 'type': 'File', 'size': 449500, 'comment': ''}, {'name': '2-52R6_S1.tap', 'type': 'File', 'size': 2243000, 'comment': ''}, {'name': '3-52R6_S1.tap', 'type': 'File', 'size': 1839000, 'comment': ''}, {'name': '4-52R6_S1.tap', 'type': 'File', 'size': 985000, 'comment': ''}, {'name': '5-52R6_S1.tap', 'type': 'File', 'size': 416500, 'comment': ''}, {'name': '6-52R6_S1.tap', 'type': 'File', 'size': 776000, 'comment': ''}, {'name': '7-25R5_S1.tap', 'type': 'File', 'size': 1695500, 'comment': ''}, {'name': '8-25R5_S1.tap', 'type': 'File', 'size': 1977000, 'comment': ''}, {'name': '9-25R5_S1.tap', 'type': 'File', 'size': 133500, 'comment': ''}]
-
-        # RULE: The search buffer MUST NOT contain spaces or lowercase letters.
-        # We search for the unique ID (N17778) first.
-        search_text = "N17778\x00"
-        search_buf = create_string_buffer(search_text.encode('ascii'))
-
-        for file in file_list:
-            # RULE: prog_name must be a full path string (NULL terminated)
-            path_str = f"//DATA_SV/{file['name']}\x00"
-            prog_name_ptr = create_string_buffer(path_str.encode('ascii'))
-            
-            logging.info(f"Searching in: {path_str}")
-
-            # 1. Initiate the Search
-            # Arguments must be explicitly cast to c_ulong to ensure 4-byte alignment
-            ret = fwlib.cnc_pdf_searchword(
-                self.handle,
-                prog_name_ptr,    # prog_name: char*
-                c_ulong(0),       # line_no: 0 (start from top)
-                c_ulong(1),       # type: 1 (Word search)
-                c_ulong(1),       # direct: 1 (Search downwards)
-                c_ulong(1),       # repeat: 1 (First occurrence)
-                search_buf        # buffer: char*
-            )
-
-            if ret == 0: # EW_OK
-                # 2. Retrieve the Result (Asynchronous Polling)
-                found_line_no = c_long()
-                
-                # The CNC takes time to scan; we must loop until it's finished.
-                timeout = time.time() + 5  # 5 second safety timeout
-                while time.time() < timeout:
-                    # result = [handle, pointer to line number]
-                    res = fwlib.cnc_pdf_searchresult(self.handle, byref(found_line_no))
-                    
-                    if res == 0: # EW_OK (Found!)
-                        logging.info(f"MATCH FOUND! File: {file['name']} at Line: {found_line_no.value}")
-                        return file['name']
-                    
-                    elif res == -1: # EW_BUSY
-                        time.sleep(0.05) # Wait 50ms and try again
-                        continue
-                    
-                    else: # Any other error (like EW_NUMBER if not found)
-                        logging.info(f"No match in {file['name']} (Result code: {res})")
-                        break
-            else:
-                # If you still get code 5 here, it means the CNC rejected your path or string format.
-                logging.error(f"Could not start search in {file['name']}, Error Code: {ret}")
-
-        logging.info("Search completed. No matches found in any file.")
-        return None
-
-    def get_cnc_program_details_ascii(self):
-    # Prepare the data dictionary with a timestamp
-        data = {"ts": time.time_ns() // 1_000_000}
-        
-        start_time = time.perf_counter()
-        
-        # 1. Setup the cnc_rdproginfo function
-        # Arguments: handle, type (1=ASCII), length (31), buffer
-        fanuc_info = fwlib.cnc_rdproginfo
-        fanuc_info.restype = c_short
-        
-        # Initialize the Union structure
-        odbnc = ODBNC() 
-        
-        # 2. Call the API in ASCII mode (type=1, length=31)
-        # Reference: https://www.inventcom.net/fanuc-focas-library/Program/cnc_rdproginfo
-        result = fanuc_info(self.handle, 1, 31, byref(odbnc))
-
-
-        
-        if result == 0:
-            # Get the raw bytes and decode to string
-            ascii_data = odbnc.asc.decode('ascii').strip('%').strip()
-            
-            # The data comes back as "reg\nunreg\nused\nunused"
-            # We split it into a list for easier use
-            parts = ascii_data.split('\n')
-            
-            data.update({
-                "registered_programs": parts[0] if len(parts) > 0 else "0",
-                "available_programs":  parts[1] if len(parts) > 1 else "0",
-                "used_memory":         parts[2] if len(parts) > 2 else "0",
-                "unused_memory":       parts[3] if len(parts) > 3 else "0",
-                "raw_ascii":           ascii_data
-            })
-        else:
-            data['error'] = result
-
-        # 3. Add the execution time
-        data['execution_time_s'] = time.perf_counter() - start_time
-        
-        # Since you asked for the function not to return data (perhaps to log or store instead)
-        # You can print it or assign it to a class variable
-        logging.info(f"Program Info (ASCII): {data}")
-
-    def get_dnc_diagnosis(self,):
-        """
-        Reads DNC diagnosis data to see what the CNC is expecting.
-        """
-        dgndt = ODBDNCDGN()
-        ret = fwlib.cnc_rddncdgndt(self.handle, ctypes.byref(dgndt))
-        
-        if ret == 0:
-            # Decode the file name (Shift-JIS is standard for Fanuc)
-            try:
-                file_name = dgndt.nc_file.decode('shift-jis').strip('\x00')
-            except:
-                file_name = str(dgndt.nc_file)
-                
-            logging.info(f"--- DNC Diagnosis ---")
-            logging.info(f"CNC Requested File: {file_name}")
-            logging.info(f"Control Word: {dgndt.ctrl_word}")
-            logging.info(f"Total Size Transferred: {dgndt.total_size}")
-            # return dgndt
-        else:
-            logging.error(f"Failed to read diagnosis. Error: {ret}")
-            return None
-
     def list_dataserver_files(self):
         # Initialize structures
             blk_count = ctypes.c_short(1)
@@ -459,27 +249,18 @@ class FocasDriver(object):
 
             if ret == 0:
                 logging.info(f"Total files on Data Server: {ds_info_out.total}")
-                # local_dir = "./humac"
-                # if not os.path.exists(local_dir):
-                #     os.makedirs(local_dir)
 
                 for i in range(ds_info_out.total):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')   
                     logging.info(f"Starting download for: {filename}")
 
                     if filename == '50-8BALL_F_S1.tap':
-                        
-                    #     self.download_raw_file(filename)
-                        # old_n = ctypes.create_string_buffer(filename.encode('ascii') + b'\x00')
-                        # new_n = ctypes.create_string_buffer('15-10R1_S1.nc'.encode('ascii') + b'\x00')
-                        # ret = fwlib.cnc_dsrename(self.handle, b'DATA_SV', old_n, new_n)
-                        # logging.info(f"Rename result for {filename}: {ret} with {new_n.value.decode('ascii')}")
+
                         # --- START DOWNLOAD FLOW ---
                         # 2. Start the transfer for this specific file
-                        # Format usually requires //DATA_SV/ prefix
+                        
                         remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
                         end_line_path = remote_full_path + b'\x00'
-                        #b' //DATA_SV/xw20.nc\x00
                         logging.info(f"full path : {end_line_path}")
                         buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
                         ret_upstart = fwlib.cnc_fileread_start(self.handle, 0 , buf_path)  # Start transfer
@@ -494,14 +275,13 @@ class FocasDriver(object):
                             time.sleep(0.2)
                             buf = create_string_buffer(CNC.MAX_BLOCK)
                             length = c_long(CNC.MAX_BLOCK) 
-
                             ret_upload = fwlib.cnc_fileread(self.handle, byref(length), buf)     
                             logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
                             if ret_upload == 0  and length.value > 0:
                                 block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
                                 logging.info(f"blocks : {block}")
                             elif ret_upload == -2:
-                                
+                                logging.info(f"Upload completed for {filename}")
                                 break
 
                             elif ret_upload != 0 and ret_upload != -2:
@@ -513,32 +293,6 @@ class FocasDriver(object):
 
             else:
                 logging.error(f"Failed to list files. Error code: {ret}")
-
-    def download_raw_file(self, filename):
-        # १. डेटा सर्व्हरवरील मूळ फाईलचे नाव (जसे आहे तसे एक्सटेंशनसह)
-        ds_file = filename.encode('ascii') + b'\x00'  # "57-6BALL_F_S1.tap"
-        
-        # २. कॉम्प्युटरवर किंवा CNC मेमरीमध्ये ज्या नावाने सेव्ह करायचे आहे ते नाव
-        local_cnc_file = f"//CNC_MEM/USER/{filename}".encode('ascii') + b'\x00'  # Null-terminated local name (e.g., "downloaded_file.tap")
-
-        logging.info(f"Requesting direct file download for: {filename}")
-        
-        # ३. cnc_dsget_req कॉल करा (हा ओ-नंबर मॅच करत नाही, थेट बाहेरचे नाव शोधतो)
-        # Arguments: handle, host_file_name, cnc_file_name, attribute(0)
-        ret = fwlib.cnc_dsget_req(self.handle, ds_file, local_cnc_file, 0)
-        
-        if ret == 0:
-            logging.info("Success! File transfer started in background by Name ")
-            # यानंतर तुम्ही नेहमीच्या पद्धतीने O9999 मेमरीमधून रीड करू शकता.
-        else:
-            logging.error(f"Failed! Code: {ret}")
-        time.sleep(10)  # Wait for transfer to complete (adjust as needed)
-        ret = fwlib.cnc_dsftpcancel(self.handle)
-
-        if ret == 0:
-            logging.info(f'ftp file stop file transfer successfully{ret}')
-        else:
-            logging.error(f'ftp file stop file transfer failed with code {ret}')
     
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:

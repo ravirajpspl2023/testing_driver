@@ -13,11 +13,11 @@ MQTT_PORT = 1883
 TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
 MQTT_PASS = None
-MQTT_CLI = "SACNC01"
+MQTT_CLI = "VMC08"
 
 config = {
         "machines":[
-           {"fanuc":{"ip":"192.168.0.2", "port":8193,"timeout":5,"edgid" :"ed4200021" , "machineid":"SACNC01"}},
+           {"fanuc":{"ip":"192.168.0.1", "port":8193,"timeout":5,"edgid" :"e400036" , "machineid":"VMC08"}},
           #  {"hass":{"ip":"192.168.0.2", "port":8082,"timeout":5,"edgid" :"ed4200022" , "machineid":"SACNC02"}},
         ]
     }
