@@ -231,10 +231,10 @@ class FocasDriver(object):
         # 1. Initialize structures for listing
             ds_file_in = IN_DSFILE()
             ds_info_out = OUT_DSINFO()
-            ds_file_out = (OUT_DSFILE * 10)() 
+            ds_file_out = (OUT_DSFILE * 20)() 
 
             ds_file_in.path = b"" 
-            ds_file_in.req_num = 10
+            ds_file_in.req_num = 20
             ds_file_in.size_type = 1 
             ds_file_in.detail = 0    
 
@@ -254,7 +254,7 @@ class FocasDriver(object):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')   
                     logging.info(f"Starting download for: {filename}")
 
-                    if filename == '50-8BALL_F_S1.tap':
+                    if filename == '10-16R2_S2.tap':
 
                         # --- START DOWNLOAD FLOW ---
                         # 2. Start the transfer for this specific file
