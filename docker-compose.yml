@@ -33,7 +33,7 @@ services:
       --auto-aof-rewrite-min-size 64mb
       --maxmemory 256mb 
       --maxmemory-policy allkeys-lru
-      --save 60 1000          # RDB hybrid sathi
+      --save 60 1000  
       --save 300 100
       --dir /data
     logging:
