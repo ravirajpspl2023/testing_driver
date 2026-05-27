@@ -30,17 +30,8 @@ class Machine(mp.Process):
         pid = os.getpid()
         self.driver = FocasDriver(self.config)
         try:           
-            # programs = self.driver.get_cnc_program_details_ascii()
-            # self.driver.get_all_program_names()
-            # self.driver.get_current_ds_path()
-            # self.driver.get_dnc_diagnosis()
-            # self.driver.list_dataserver_files()
-            # self.driver.check_execution_vs_main()
-            # self.driver.get_hint_from_exec_block()
-
-            # self.driver.search_text_in_dataserver()
-
-
+            self.driver.list_dataserver_files()
+            
             while True:
                 data = self.driver.get_cnc_program_detais()
                 start_time = time.time()
