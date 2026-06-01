@@ -293,7 +293,14 @@ class FocasDriver(object):
 
             else:
                 logging.error(f"Failed to list files. Error code: {ret}")
-    
+
+    def upload_program(self,):
+        file_path = "//DATA_SV/humac/"
+        start_ret = fwlib.cnc_dwnstart4(self.handle,0,file_path.encode('shift-jis',errors='replace') )
+        logging.info(f"Download start result: {start_ret}")
+        end_ret = fwlib.cnc_dwnend4(self.handle)
+        logging.info(f"Download end result: {end_ret}")
+
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
             fwlib.cnc_freelibhndl(self.handle)
