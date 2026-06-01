@@ -122,6 +122,7 @@ class BlockThread(threading.Thread):
                     gcode_data['program_No'] = CNC.PROGRAME_NAME 
                     gcode_data['edgeid'] = self.edgeid
                     self.previous_block = self.blk_no.value
+                    # logging.info(f"{gcode_data}")
                     self.redis.xadd("block",gcode_data)
 
     def stop(self):
