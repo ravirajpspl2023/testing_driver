@@ -314,7 +314,7 @@ class FocasDriver(object):
         logging.info(f"Total program size: {total_len} bytes")
 
         # --- Step 2: cnc_dwnstart4 ---
-        folder_path = "//DATA_SV/HUMAC.NC"
+        folder_path = "//DATA_SV/"
         dir_bytes = folder_path.encode('shift-jis', errors='replace') + b'\x00'
 
         start_ret = fwlib.cnc_dwnstart4(self.handle, 0, dir_bytes)
