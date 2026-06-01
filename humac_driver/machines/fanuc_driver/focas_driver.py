@@ -295,13 +295,83 @@ class FocasDriver(object):
                 logging.error(f"Failed to list files. Error code: {ret}")
 
     def upload_program(self,):
-        file_path = f"//DATA_SV/"
-        end_line_path = file_path.encode('shift-jis',errors='replace').rstrip(b'\x00') + b'\x00'
-        logging.info(f"full path : {end_line_path}")
-        start_ret = fwlib.cnc_dwnstart4(self.handle,0,end_line_path)
-        logging.info(f"Download start result: {start_ret}")
+            # --- Step 1: NC Program prepare करा ---
+        
+        program_content = (
+            "\n"
+            "<PROG123>\n"
+            "M3 S1200\n"
+            "G0 Z0\n"
+            "G0 X0 Y0\n"
+            "G1 F500 X120. Y-30.\n"
+            "M30\n"
+            "%"
+        )
+
+        # String → bytes convert करा
+        prg_bytes = program_content.encode('ascii')
+        total_len = len(prg_bytes)
+        logging.info(f"Total program size: {total_len} bytes")
+
+        # --- Step 2: cnc_dwnstart4 ---
+        folder_path = "//DATA_SV/HUMAC.NC"
+        dir_bytes = folder_path.encode('shift-jis', errors='replace') + b'\x00'
+
+        start_ret = fwlib.cnc_dwnstart4(self.handle, 0, dir_bytes)
+        logging.info(f"cnc_dwnstart4 result: {start_ret}")
+
+        if start_ret != 0:
+            logging.error(f"cnc_dwnstart4 failed: {start_ret}")
+            return start_ret
+
+        # --- Step 3: Chunk करून cnc_download4 ला पाठवा ---
+        CHUNK_SIZE = 1024   # Max 1024 bytes per call (safe for Ethernet)
+        EW_OK      = 0
+        EW_BUFFER  = 10
+        sent       = 0      # किती bytes पाठवले
+
+        while sent < total_len:
+
+            # पुढचा chunk काढा (max CHUNK_SIZE bytes)
+            chunk = prg_bytes[sent : sent + CHUNK_SIZE]
+            chunk_len = len(chunk)
+
+            # ctypes c_long — in/out parameter
+            n = ctypes.c_long(chunk_len)
+
+            ret = fwlib.cnc_download4(
+                self.handle,
+                ctypes.byref(n),   # length pointer
+                chunk              # data pointer
+            )
+
+            logging.info(
+                f"cnc_download4 | offset={sent} "
+                f"| tried={chunk_len} | accepted={n.value} "
+                f"| ret={ret}"
+            )
+
+            if ret == EW_BUFFER:
+                # CNC चा buffer full आहे — same chunk पुन्हा try करा
+                logging.warning(f"EW_BUFFER at offset={sent}, retrying...")
+                continue  # sent वाढवायचा नाही, same chunk पुन्हा
+
+            elif ret == EW_OK:
+                # n.value = CNC ने actually accept केलेले bytes
+                sent += n.value
+                logging.info(f"Sent {sent}/{total_len} bytes")
+
+            else:
+                # Real error
+                logging.error(f"cnc_download4 error: {ret} at offset={sent}")
+                fwlib.cnc_dwnend4(self.handle)  # cleanup
+                return ret
+
+        logging.info("All data sent successfully!")
+
+        # --- Step 4: cnc_dwnend4 ---
         end_ret = fwlib.cnc_dwnend4(self.handle)
-        logging.info(f"Download end result: {end_ret}")
+        logging.info(f"cnc_dwnend4 result: {end_ret}")
 
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
