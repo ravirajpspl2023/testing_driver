@@ -295,8 +295,10 @@ class FocasDriver(object):
                 logging.error(f"Failed to list files. Error code: {ret}")
 
     def upload_program(self,):
-        file_path = f"//DATA_SV/".encode('shift-jis',errors='replace') +b"\x00"
-        start_ret = fwlib.cnc_dwnstart4(self.handle,0,file_path.encode('shift-jis',errors='replace') )
+        file_path = f"//DATA_SV/"
+        end_line_path = file_path.encode('shift-jis',errors='replace').rstrip(b'\x00') + b'\x00'
+        logging.info(f"full path : {end_line_path}")
+        start_ret = fwlib.cnc_dwnstart4(self.handle,0,end_line_path)
         logging.info(f"Download start result: {start_ret}")
         end_ret = fwlib.cnc_dwnend4(self.handle)
         logging.info(f"Download end result: {end_ret}")
