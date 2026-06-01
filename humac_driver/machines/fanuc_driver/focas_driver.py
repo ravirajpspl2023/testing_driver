@@ -295,7 +295,7 @@ class FocasDriver(object):
                 logging.error(f"Failed to list files. Error code: {ret}")
 
     def upload_program(self,):
-        file_path = "//DATA_SV/humac/"
+        file_path = f"//DATA_SV/".encode('shift-jis',errors='replace') + b"humac.nc\x00"
         start_ret = fwlib.cnc_dwnstart4(self.handle,0,file_path.encode('shift-jis',errors='replace') )
         logging.info(f"Download start result: {start_ret}")
         end_ret = fwlib.cnc_dwnend4(self.handle)
