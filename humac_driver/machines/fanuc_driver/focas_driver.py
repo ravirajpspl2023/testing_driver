@@ -4,18 +4,17 @@ from ctypes.util import find_library
 from ctypes import *
 import json
 import time 
-from functools import partial
 from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
 from humac_driver.machines.fanuc_driver.Gblock_thread import BlockThread
 from humac_driver.database.redis_client import RedisConnection
+
+from humac_driver.machines.files_download.downloader import S3Downloader
 import threading
-import datetime
 import logging
 from  multiprocessing  import Queue
 from humac_driver.const import *
-from ftplib import FTP
 import os
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -56,6 +55,7 @@ class FocasDriver(object):
         self.previous_date = None
         self.lock = threading.Lock()
         self.block_thread = BlockThread(config) 
+        self.S3Downloader = S3Downloader()
         self.connect()
     
     def connect(self,):
@@ -217,6 +217,10 @@ class FocasDriver(object):
             #     results = pool.map(self._run_function, partial_funcs)
             
             # return dict(zip(method_names, results))
+    def delete_file(self,filename):
+        end_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00') + b"\x00"
+        del_ret = fwlib.cnc_pdf_del(self.handle,end_path)
+        logging.info(f"result delete file:{del_ret}")
 
 
     def list_dataserver_files(self):
@@ -253,6 +257,12 @@ class FocasDriver(object):
                 for i in range(ds_info_out.total):
                     filename = ds_file_out[i].file.decode('ascii').strip('\x00')   
                     logging.info(f"Starting download for: {filename}")
+
+                    if filename == 'PROG123':
+                        logging.info(f"Found target file: {filename}")
+                        file_path = f"//DATA_SV/{filename}"
+                        del_ret = fwlib.cnc_pdf_del(self.handle, b"//DATA_SV/PROG123")
+
 
                     if filename == '10-16R2_S2.tap':
 
@@ -297,75 +307,73 @@ class FocasDriver(object):
     def upload_program(self,):
             # --- Step 1: NC Program prepare करा ---
         
-        program_content = (
-            "\n"
-            "<PROG123>\n"
-            "M3 S1200\n"
-            "G0 Z0\n"
-            "G0 X0 Y0\n"
-            "G1 F500 X120. Y-30.\n"
-            "M30\n"
-            "%"
-        )
+        # program_content = (
+        #     "\n"
+        #     "<PROG123>\n"
+        #     "M3 S1200\n"
+        #     "G0 Z0\n"
+        #     "G0 X0 Y0\n"
+        #     "G1 F500 X120. Y-30.\n"
+        #     "M30\n"
+        #     "%"
+        # )
+        new_program =  self.S3Downloader.download_new_files()
+        for program in new_program:
+            filename = os.path.basename(program)
+            with open(os.path.join(self.S3Downloader.config['local']['download_folder'], filename), 'r') as f:
+                program_content = f.read()
+                # String → bytes convert 
+                new_program = program_content.replace("O0001", f"<{filename}>")
+                prg_bytes = new_program.encode('ascii', errors='ignore')
+                total_len = len(prg_bytes)
+                logging.info(f"Total program size: {total_len} bytes")
 
-        # String → bytes convert करा
-        prg_bytes = program_content.encode('ascii')
-        total_len = len(prg_bytes)
-        logging.info(f"Total program size: {total_len} bytes")
+                # --- Step 2: cnc_dwnstart4 ---
+                folder_path = "//DATA_SV/"
+                dir_bytes = folder_path.encode('shift-jis', errors='replace') + b'\x00'
 
-        # --- Step 2: cnc_dwnstart4 ---
-        folder_path = "//DATA_SV/"
-        dir_bytes = folder_path.encode('shift-jis', errors='replace') + b'\x00'
+                start_ret = fwlib.cnc_dwnstart4(self.handle, 0, dir_bytes)
+                logging.info(f"cnc_dwnstart4 result: {start_ret}")
 
-        start_ret = fwlib.cnc_dwnstart4(self.handle, 0, dir_bytes)
-        logging.info(f"cnc_dwnstart4 result: {start_ret}")
+                if start_ret != 0:
+                    logging.error(f"cnc_dwnstart4 failed: {start_ret}")
+                    return start_ret
+                
+                EW_OK      = 0
+                EW_BUFFER  = 10
+                sent       = 0  
+                while sent < total_len:
+                    chunk = prg_bytes[sent : sent + CNC.MAX_BLOCK]
+                    chunk_len = len(chunk)
 
-        if start_ret != 0:
-            logging.error(f"cnc_dwnstart4 failed: {start_ret}")
-            return start_ret
+                    # ctypes c_long — in/out parameter
+                    n = ctypes.c_long(chunk_len)
 
-        # --- Step 3: Chunk करून cnc_download4 ला पाठवा ---
-        CHUNK_SIZE = 1024   # Max 1024 bytes per call (safe for Ethernet)
-        EW_OK      = 0
-        EW_BUFFER  = 10
-        sent       = 0      # किती bytes पाठवले
+                    ret = fwlib.cnc_download4(
+                        self.handle,
+                        ctypes.byref(n),   # length pointer
+                        chunk              # data pointer
+                    )
 
-        while sent < total_len:
+                    logging.info(
+                        f"cnc_download4 | offset={sent} "
+                        f"| tried={chunk_len} | accepted={n.value} "
+                        f"| ret={ret}"
+                    )
 
-            # पुढचा chunk काढा (max CHUNK_SIZE bytes)
-            chunk = prg_bytes[sent : sent + CHUNK_SIZE]
-            chunk_len = len(chunk)
+                    if ret == EW_BUFFER:
+                        logging.warning(f"EW_BUFFER at offset={sent}, retrying...")
+                        continue  
 
-            # ctypes c_long — in/out parameter
-            n = ctypes.c_long(chunk_len)
+                    elif ret == EW_OK:
+                        sent += n.value
+                        logging.info(f"Sent {sent}/{total_len} bytes")
 
-            ret = fwlib.cnc_download4(
-                self.handle,
-                ctypes.byref(n),   # length pointer
-                chunk              # data pointer
-            )
-
-            logging.info(
-                f"cnc_download4 | offset={sent} "
-                f"| tried={chunk_len} | accepted={n.value} "
-                f"| ret={ret}"
-            )
-
-            if ret == EW_BUFFER:
-                # CNC चा buffer full आहे — same chunk पुन्हा try करा
-                logging.warning(f"EW_BUFFER at offset={sent}, retrying...")
-                continue  # sent वाढवायचा नाही, same chunk पुन्हा
-
-            elif ret == EW_OK:
-                # n.value = CNC ने actually accept केलेले bytes
-                sent += n.value
-                logging.info(f"Sent {sent}/{total_len} bytes")
-
-            else:
-                # Real error
-                logging.error(f"cnc_download4 error: {ret} at offset={sent}")
-                fwlib.cnc_dwnend4(self.handle)  # cleanup
-                return ret
+                    else:
+                        logging.error(f"cnc_download4 error: {ret} at offset={sent}")
+                        fwlib.cnc_dwnend4(self.handle)  # cleanup
+                        return ret
+            
 
         logging.info("All data sent successfully!")
 

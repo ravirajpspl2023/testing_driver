@@ -2,3 +2,8 @@ requests
 paho-mqtt
 pysmb
 redis
+
+boto3
+pyyaml
+tenacity
+python-dotenv
