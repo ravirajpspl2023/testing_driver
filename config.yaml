@@ -6,8 +6,8 @@ s3:
   bucket: "savitri-gcode"
 
 local:
-  download_folder: "./programs"
-  state_file: "./programs/.s3_downloader_state.json"
+  download_folder: "./"
+  state_file: ".s3_downloader_state.json"
 
 polling:
   interval_seconds: 5
