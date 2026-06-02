@@ -307,10 +307,10 @@ class FocasDriver(object):
         
         new_program =  self.file_downloader.download_new_files()
         if not new_program:
-            logging.info("No new program to upload.")
             return
         
         logging.info(f"New program list: {new_program}")
+
         for program in new_program:
             filename = os.path.basename(program)
             with open(os.path.join(self.file_downloader.config['local']['download_folder'], filename), 'r') as f:
@@ -319,7 +319,7 @@ class FocasDriver(object):
                 new_program = program_content.replace("O0001", f"<{filename}>")
                 prg_bytes = new_program.encode('ascii', errors='ignore')
                 total_len = len(prg_bytes)
-                logging.info(f"Total program size: {total_len} bytes")
+                logging.info(f"Total program size: {total_len} bytes of {filename}")
 
                 # --- Step 2: cnc_dwnstart4 ---
                 folder_path = "//DATA_SV/"
@@ -348,7 +348,7 @@ class FocasDriver(object):
                         ctypes.byref(n),   # length pointer
                         chunk              # data pointer
                     )
-                    time.sleep(0.4)  # Small delay to prevent overwhelming the CNC
+                    time.sleep(0.2)  # Small delay to prevent overwhelming the CNC
                     logging.info(
                         f"cnc_download4 | offset={sent} "
                         f"| tried={chunk_len} | accepted={n.value} "
