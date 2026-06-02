@@ -7,7 +7,7 @@ s3:
 
 local:
   download_folder: "./"
-  state_file: ".s3_downloader_state.json"
+  state_file: "./.s3_downloader_state.json"
 
 polling:
   interval_seconds: 5
