@@ -304,19 +304,12 @@ class FocasDriver(object):
                 logging.error(f"Failed to list files. Error code: {ret}")
 
     def upload_program(self,):
-            # --- Step 1: NC Program prepare करा ---
         
-        # program_content = (
-        #     "\n"
-        #     "<PROG123>\n"
-        #     "M3 S1200\n"
-        #     "G0 Z0\n"
-        #     "G0 X0 Y0\n"
-        #     "G1 F500 X120. Y-30.\n"
-        #     "M30\n"
-        #     "%"
-        # )
         new_program =  self.file_downloader.download_new_files()
+        if not new_program:
+            logging.info("No new program to upload.")
+            return
+        
         logging.info(f"New program list: {new_program}")
         for program in new_program:
             filename = os.path.basename(program)
@@ -341,7 +334,8 @@ class FocasDriver(object):
                 
                 EW_OK      = 0
                 EW_BUFFER  = 10
-                sent       = 0  
+                sent       = 0
+
                 while sent < total_len:
                     chunk = prg_bytes[sent : sent + CNC.MAX_BLOCK]
                     chunk_len = len(chunk)
@@ -354,7 +348,7 @@ class FocasDriver(object):
                         ctypes.byref(n),   # length pointer
                         chunk              # data pointer
                     )
-
+                    time.sleep(0.4)  # Small delay to prevent overwhelming the CNC
                     logging.info(
                         f"cnc_download4 | offset={sent} "
                         f"| tried={chunk_len} | accepted={n.value} "
@@ -368,13 +362,11 @@ class FocasDriver(object):
                     elif ret == EW_OK:
                         sent += n.value
                         logging.info(f"Sent {sent}/{total_len} bytes")
-
                     else:
                         logging.error(f"cnc_download4 error: {ret} at offset={sent}")
                         fwlib.cnc_dwnend4(self.handle)  # cleanup
-                        return ret
-            
-
+                        break 
+            logging.info(f"Finished processing {filename}")    
         logging.info("All data sent successfully!")
 
         # --- Step 4: cnc_dwnend4 ---

@@ -31,9 +31,8 @@ class Machine(mp.Process):
         self.driver = FocasDriver(self.config)
         try:           
             # self.driver.list_dataserver_files()
-            self.driver.upload_program()
-            
             while True:
+                self.driver.upload_program()
                 data = self.driver.get_cnc_program_detais()
                 start_time = time.time()
                 if self.MainProgram != data.get('mdata'):
