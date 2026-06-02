@@ -9,7 +9,6 @@ from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
 from humac_driver.machines.fanuc_driver.Gblock_thread import BlockThread
 from humac_driver.database.redis_client import RedisConnection
-
 from humac_driver.machines.files_download.downloader import S3Downloader
 import threading
 import logging
@@ -55,7 +54,7 @@ class FocasDriver(object):
         self.previous_date = None
         self.lock = threading.Lock()
         self.block_thread = BlockThread(config) 
-        self.S3Downloader = S3Downloader()
+        self.file_downloader = S3Downloader()
         self.connect()
     
     def connect(self,):
@@ -317,10 +316,11 @@ class FocasDriver(object):
         #     "M30\n"
         #     "%"
         # )
-        new_program =  self.S3Downloader.download_new_files()
+        new_program =  self.file_downloader.download_new_files()
+        logging.info(f"New program list: {new_program}")
         for program in new_program:
             filename = os.path.basename(program)
-            with open(os.path.join(self.S3Downloader.config['local']['download_folder'], filename), 'r') as f:
+            with open(os.path.join(self.file_downloader.config['local']['download_folder'], filename), 'r') as f:
                 program_content = f.read()
                 # String → bytes convert 
                 new_program = program_content.replace("O0001", f"<{filename}>")
