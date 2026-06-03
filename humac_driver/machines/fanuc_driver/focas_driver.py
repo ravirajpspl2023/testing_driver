@@ -338,7 +338,7 @@ class FocasDriver(object):
                 BUFFER_SIZE = 4096
 
                 while sent < total_len:
-                    chunk = prg_bytes[sent : sent + CNC.MAX_BLOCK]
+                    chunk = prg_bytes[sent : sent + BUFFER_SIZE]
                     chunk_len = len(chunk)
 
                     # ctypes c_long — in/out parameter
