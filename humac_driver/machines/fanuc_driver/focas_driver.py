@@ -281,7 +281,7 @@ class FocasDriver(object):
                         logging.info(f"Upstart result for {filename}: {ret_upstart}")
 
                         while True:
-                            time.sleep(0.2)
+                            time.sleep(0.25)
                             buf = create_string_buffer(CNC.MAX_BLOCK)
                             length = c_long(CNC.MAX_BLOCK) 
                             ret_upload = fwlib.cnc_fileread(self.handle, byref(length), buf)     
