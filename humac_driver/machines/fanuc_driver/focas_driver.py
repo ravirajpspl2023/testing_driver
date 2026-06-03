@@ -336,7 +336,7 @@ class FocasDriver(object):
                     if start_ret == -1:
                         logging.warning(f"cnc_dwnstart4 busy, retrying... (Code: {start_ret})")
                         fwlib.cnc_dwnend4(self.handle)  # cleanup
-                        time.sleep(5)
+                        time.sleep(1)
                         continue
                     else:
                         logging.error(f"cnc_dwnstart4 failed with code: {start_ret}")
@@ -378,7 +378,8 @@ class FocasDriver(object):
                         fwlib.cnc_dwnend4(self.handle)  # cleanup
                         time.sleep(5)  # Wait before next attempt
                         break 
-            logging.info(f"Finished processing {filename}")    
+                end_ret = fwlib.cnc_dwnend4(self.handle)
+                logging.info(f"Finished processing {filename} with result: {end_ret}")    
         logging.info("All data sent successfully!")
 
         # --- Step 4: cnc_dwnend4 ---
