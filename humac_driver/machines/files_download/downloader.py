@@ -35,10 +35,13 @@ class S3Downloader:
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=4, max=30))
     def download_new_files(self):
         try:
-            response = self.s3_client.list_objects_v2(Bucket=self.config['s3']['bucket'])
+            machine_id = self.config['s3']['machineid']
+            today_date = time.strftime("%Y-%m-%d")
+            prefix = f"{machine_id}_{today_date}/"
+            response = self.s3_client.list_objects_v2(Bucket=self.config['s3']['bucket'], Prefix=prefix)
             
             if 'Contents' not in response:
-                logging.info("No files in bucket")
+                logging.info(f"No files in bucket folder: {machine_id}")
                 return []
             # self.logger.info(f"Contents: {response['Contents']}")
             current_keys = [obj['Key'] for obj in response['Contents']]

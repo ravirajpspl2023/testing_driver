@@ -355,7 +355,7 @@ class FocasDriver(object):
                         f"| ret={ret}"
                     )
 
-                    if ret == EW_BUFFER:
+                    if ret == EW_BUFFER and  ret == -1 :
                         logging.warning(f"EW_BUFFER at offset={sent}, retrying...")
                         continue  
 
@@ -365,6 +365,7 @@ class FocasDriver(object):
                     else:
                         logging.error(f"cnc_download4 error: {ret} at offset={sent}")
                         fwlib.cnc_dwnend4(self.handle)  # cleanup
+                        time.sleep(1)  # Wait before next attempt
                         break 
             logging.info(f"Finished processing {filename}")    
         logging.info("All data sent successfully!")
@@ -378,5 +379,3 @@ class FocasDriver(object):
             fwlib.cnc_freelibhndl(self.handle)
         self.block_thread.stop()
         
-
-
