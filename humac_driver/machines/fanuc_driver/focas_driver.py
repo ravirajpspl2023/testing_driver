@@ -158,11 +158,7 @@ class FocasDriver(object):
 
                 ret_end = fwlib.cnc_upend4(self.handle)
                 logging.info(f"upend4 result: {ret_end}")
-
-            # data['name'] = CNC.PROGRAME_NAME
-            # data['program'] = program_content
-            # data['time'] = round(time.perf_counter() - start_time, 4)
-        
+                
         except Exception as e:
             logging.error(f"Error in get_cnc_programe: {e}")
         
