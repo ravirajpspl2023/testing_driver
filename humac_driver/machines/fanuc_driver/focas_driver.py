@@ -366,7 +366,7 @@ class FocasDriver(object):
                     else:
                         logging.error(f"cnc_download4 error: {ret} at offset={sent}")
                         fwlib.cnc_dwnend4(self.handle)  # cleanup
-                        time.sleep(1)  # Wait before next attempt
+                        time.sleep(5)  # Wait before next attempt
                         break 
             logging.info(f"Finished processing {filename}")    
         logging.info("All data sent successfully!")
