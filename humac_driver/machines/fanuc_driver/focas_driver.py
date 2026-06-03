@@ -356,7 +356,7 @@ class FocasDriver(object):
                         f"| ret={ret}"
                     )
 
-                    if ret == EW_BUFFER and  ret == -1 :
+                    if ret == EW_BUFFER or ret == -1 :
                         logging.warning(f"EW_BUFFER at offset={sent}, retrying...")
                         continue  
 
