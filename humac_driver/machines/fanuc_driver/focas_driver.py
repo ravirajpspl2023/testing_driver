@@ -325,12 +325,19 @@ class FocasDriver(object):
                 folder_path = "//DATA_SV/"
                 dir_bytes = folder_path.encode('shift-jis', errors='replace') + b'\x00'
 
-                start_ret = fwlib.cnc_dwnstart4(self.handle, 0, dir_bytes)
-                logging.info(f"cnc_dwnstart4 result: {start_ret}")
-
-                if start_ret != 0:
-                    logging.error(f"cnc_dwnstart4 failed: {start_ret}")
-                    return start_ret
+                max_retries = 5
+                attempt = 0
+                while True:
+                    start_ret = fwlib.cnc_dwnstart4(self.handle, 0, dir_bytes)
+                    logging.info(f"cnc_dwnstart4 result: {start_ret} (attempt {attempt + 1}/{max_retries})")
+                    if start_ret == 0:
+                        break
+                    attempt += 1
+                    logging.warning(f"cnc_dwnstart4 failed, retrying: {start_ret}")
+                    if attempt >= max_retries:
+                        logging.error(f"cnc_dwnstart4 failed after {max_retries} attempts: {start_ret}")
+                        return start_ret
+                    time.sleep(1)
                 
                 EW_OK      = 0
                 EW_BUFFER  = 10
