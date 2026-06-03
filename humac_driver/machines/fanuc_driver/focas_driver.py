@@ -335,6 +335,7 @@ class FocasDriver(object):
                 EW_OK      = 0
                 EW_BUFFER  = 10
                 sent       = 0
+                BUFFER_SIZE = 4096
 
                 while sent < total_len:
                     chunk = prg_bytes[sent : sent + CNC.MAX_BLOCK]
@@ -348,7 +349,7 @@ class FocasDriver(object):
                         ctypes.byref(n),   # length pointer
                         chunk              # data pointer
                     )
-                    time.sleep(0.2)  # Small delay to prevent overwhelming the CNC
+                    time.sleep(0.1)  # Small delay to prevent overwhelming the CNC
                     logging.info(
                         f"cnc_download4 | offset={sent} "
                         f"| tried={chunk_len} | accepted={n.value} "
