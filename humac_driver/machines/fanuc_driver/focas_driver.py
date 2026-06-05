@@ -389,6 +389,7 @@ class FocasDriver(object):
             all_local.sort(key=lambda f: self.extract_sequence_number(f))
         except Exception as e:
             logging.error(f"Cannot read local folder {local_folder}: {e}")
+            os.makedirs(self.file_downloader.config['local']['download_folder'], exist_ok=True)
             return
         
         local_set = set(all_local)
