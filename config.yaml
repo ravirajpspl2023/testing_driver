@@ -3,7 +3,7 @@ s3:
   aws_access_key_id: "6SE0BP2TKXZKE7V59442"
   aws_secret_access_key: "M7N80RP5ZUNPIRJQ7R46PDYATKHYUXF8F7E5FO7I"
   region_name: "us-east-1"
-  bucket: "savitri-gcode"
+  bucket: "gcode-to-be-executed"
   machineid : "SACNC01"
 
 local:
