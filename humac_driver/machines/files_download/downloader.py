@@ -38,7 +38,7 @@ class S3Downloader:
             os.makedirs(self.config['local']['download_folder'], exist_ok=True)
             machine_id = self.config['s3']['machineid']
             today_date = time.strftime("%Y-%m-%d")
-            prefix = f"{machine_id}/{today_date}/"
+            prefix = f"{machine_id}/{today_date}/demo/"
             logging.info(f"Checking for new files with prefix: {prefix}")
             response = self.s3_client.list_objects_v2(Bucket=self.config['s3']['bucket'], Prefix=prefix)
             
