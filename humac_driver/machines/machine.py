@@ -32,7 +32,7 @@ class Machine(mp.Process):
         try:           
             # self.driver.list_dataserver_files()
             while True:
-                self.driver.upload_program()
+                self.driver.sync_programs()
                 data = self.driver.get_cnc_program_detais()
                 start_time = time.time()
                 if self.MainProgram != data.get('mdata'):
