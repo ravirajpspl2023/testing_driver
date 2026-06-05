@@ -12,7 +12,6 @@ from humac_driver.database.redis_client import RedisConnection
 from humac_driver.machines.files_download.downloader import S3Downloader
 import threading
 import logging
-from  multiprocessing  import Queue
 from humac_driver.const import *
 import os
 
@@ -212,176 +211,442 @@ class FocasDriver(object):
             #     results = pool.map(self._run_function, partial_funcs)
             
             # return dict(zip(method_names, results))
-    def delete_file(self,filename):
-        end_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00') + b"\x00"
-        del_ret = fwlib.cnc_pdf_del(self.handle,end_path)
-        logging.info(f"result delete file:{del_ret}")
 
+    def get_machine_program_list(self) -> list[str]:
+        """
+        DATA_SV drive वरील सर्व programs ची list return करतो.
+        Returns: ['O0001.nc', 'PROG002.tap', ...] — फक्त filenames
+        """
+        ds_file_in  = IN_DSFILE()
+        ds_info_out = OUT_DSINFO()
+        ds_file_out = (OUT_DSFILE * 20)()
 
-    def list_dataserver_files(self):
-        # Initialize structures
-            blk_count = ctypes.c_short(1)
-            data_len = ctypes.c_long(1000)
-            prog_data = ctypes.create_string_buffer(1000)
-            
-            fwlib.cnc_rdexecprog(self.handle, byref(data_len), byref(blk_count), prog_data)
-            logging.info(f"Execution Hint: {prog_data.value.decode('ascii', errors='replace')}")
+        ds_file_in.path      = b""
+        ds_file_in.req_num   = 20
+        ds_file_in.size_type = 1
+        ds_file_in.detail    = 0
 
-        # 1. Initialize structures for listing
-            ds_file_in = IN_DSFILE()
-            ds_info_out = OUT_DSINFO()
-            ds_file_out = (OUT_DSFILE * 20)() 
+        ret = fwlib.cnc_rddsfile(
+            self.handle,
+            b"DATA_SV",
+            ctypes.byref(ds_file_in),
+            ctypes.byref(ds_info_out),
+            ctypes.byref(ds_file_out),
+        )
 
-            ds_file_in.path = b"" 
-            ds_file_in.req_num = 20
-            ds_file_in.size_type = 1 
-            ds_file_in.detail = 0    
+        if ret != 0:
+            logging.error(f"cnc_rddsfile failed: {ret}")
+            return []
 
-            # Call listing function
-            ret = fwlib.cnc_rddsfile(
-                self.handle, 
-                b"DATA_SV", 
-                ctypes.byref(ds_file_in), 
-                ctypes.byref(ds_info_out), 
-                ctypes.byref(ds_file_out)
-            )
+        programs = []
+        for i in range(ds_info_out.total):
+            fname = ds_file_out[i].file.decode("ascii", errors="replace").strip("\x00").strip()
+            if fname:
+                programs.append(fname)
 
-            if ret == 0:
-                logging.info(f"Total files on Data Server: {ds_info_out.total}")
+        logging.info(f"Machine programs ({len(programs)}): {programs}")
+        return programs
+    
+    def _send_program_to_machine(self, local_filepath: str) -> bool:
+        """
+        Local file → Machine DATA_SV ला send करतो.
+        upload_program() मधील proven logic वापरतो.
+        Returns: True if success, False if failed
+        """
+        filename = os.path.basename(local_filepath)
+        try:
+            with open(local_filepath, "r") as f:
+                content = f.read()
+        except Exception as e:
+            logging.error(f"Cannot read {local_filepath}: {e}")
+            return False
 
-                for i in range(ds_info_out.total):
-                    filename = ds_file_out[i].file.decode('ascii').strip('\x00')   
-                    logging.info(f"Starting download for: {filename}")
+        modified = content.replace("O0001", f"<{filename}>")
+        prg_bytes  = modified.encode("ascii", errors="ignore")
+        total_len  = len(prg_bytes)
+        logging.info(f"Sending {filename} ({total_len} bytes) → DATA_SV")
 
-                    if filename == 'PROG123':
-                        logging.info(f"Found target file: {filename}")
-                        file_path = f"//DATA_SV/{filename}"
-                        del_ret = fwlib.cnc_pdf_del(self.handle, b"//DATA_SV/PROG123")
+        folder_path = "//DATA_SV/"
+        dir_bytes   = folder_path.encode("shift-jis", errors="replace") + b"\x00"
 
-
-                    if filename == '10-16R2_S2.tap':
-
-                        # --- START DOWNLOAD FLOW ---
-                        # 2. Start the transfer for this specific file
-                        
-                        remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
-                        end_line_path = remote_full_path + b'\x00'
-                        logging.info(f"full path : {end_line_path}")
-                        buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
-                        ret_upstart = fwlib.cnc_fileread_start(self.handle, 0 , buf_path)  # Start transfer
-
-                        err = ODBERR()
-                        fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
-                        logging.error(f"Detail Error for {filename}: err_no={err.err_no}, err_dtl={err.err_dtno}")
-
-                        logging.info(f"Upstart result for {filename}: {ret_upstart}")
-
-                        while True:
-                            time.sleep(0.25)
-                            buf = create_string_buffer(CNC.MAX_BLOCK)
-                            length = c_long(CNC.MAX_BLOCK) 
-                            ret_upload = fwlib.cnc_fileread(self.handle, byref(length), buf)     
-                            logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
-                            if ret_upload == 0  and length.value > 0:
-                                block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
-                                logging.info(f"blocks : {block}")
-                            elif ret_upload == -2:
-                                logging.info(f"Upload completed for {filename}")
-                                break
-
-                            elif ret_upload != 0 and ret_upload != -2:
-                                logging.error(f"Upload failed with code: {ret_upload}")
-                                break
-
-                        end_ref = fwlib.cnc_fileread_end(self.handle) 
-                        logging.info(f"Upend result for {filename}: {end_ref}")
-
+        # cnc_dwnstart4 — retry if busy
+        for attempt in range(5):
+            start_ret = fwlib.cnc_dwnstart4(self.handle, 0, dir_bytes)
+            if start_ret == 0:
+                break
+            if start_ret == -1:
+                logging.warning(f"cnc_dwnstart4 busy, retry {attempt+1}/5")
+                fwlib.cnc_dwnend4(self.handle)
+                time.sleep(1)
             else:
-                logging.error(f"Failed to list files. Error code: {ret}")
+                logging.error(f"cnc_dwnstart4 failed: {start_ret}")
+                return False
+        else:
+            logging.error("cnc_dwnstart4 never became ready")
+            return False
 
-    def upload_program(self,):
+        # Data chunks पाठवणे
+        EW_OK, EW_BUFFER, CHUNK_SIZE = 0, 10, 4096
+        sent = 0
+        while sent < total_len:
+            chunk     = prg_bytes[sent: sent + CHUNK_SIZE]
+            n         = ctypes.c_long(len(chunk))
+            ret       = fwlib.cnc_download4(self.handle, ctypes.byref(n), chunk)
+            time.sleep(0.2)
+
+            if ret in (EW_BUFFER, -1):
+                logging.warning(f"EW_BUFFER at offset={sent}, retrying...")
+                continue
+            elif ret == EW_OK:
+                sent += n.value
+                logging.info(f"  Progress: {sent}/{total_len} bytes")
+            else:
+                logging.error(f"cnc_download4 error {ret} at offset={sent}")
+                fwlib.cnc_dwnend4(self.handle)
+                return False
+
+        end_ret = fwlib.cnc_dwnend4(self.handle)
+        logging.info(f"✅ Sent {filename} — dwnend4: {end_ret}")
+        return True
+    
+    def _delete_machine_program(self, filename: str) -> bool:
+        """
+        Machine च्या DATA_SV वरून एक file delete करतो.
+        Returns: True if success
+        """
+        path = f"//DATA_SV/{filename}".encode("shift-jis", errors="replace").rstrip(b"\x00") + b"\x00"
+        ret  = fwlib.cnc_pdf_del(self.handle, path)
+        if ret == 0:
+            logging.info(f"🗑️  Deleted from machine: {filename}")
+            return True
+        else:
+            logging.error(f"Delete failed for {filename}: ret={ret}")
+            return False
+
+    def _load_send_state(self) -> dict:
+        """
+        State file मधून send pointer load करतो.
+        Structure: { "sent_files": ["O001.nc", "O002.nc", ...] }
+        'sent_files' म्हणजे आतापर्यंत machine ला successfully send केलेल्या files.
+        """
+        path = self.file_downloader.config["local"].get(
+            "sync_state_file",
+            os.path.join(os.path.dirname(self.file_downloader.config["local"]["state_file"]), "sync_state.json")
+        )
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                return json.load(f)
+        return {"sent_files": []}
+    
+    def _save_send_state(self, sent_files: list):
+        path = self.file_downloader.config["local"].get(
+            "sync_state_file",
+            os.path.join(os.path.dirname(self.file_downloader.config["local"]["state_file"]), "sync_state.json")
+        )
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            json.dump({"sent_files": sent_files, "last_updated": time.time()}, f, indent=2)
+        logging.info(f"Sync state saved: {len(sent_files)} sent files tracked")
+
+    def extract_sequence_number(self, filename):
+        """Extract numeric prefix from filename (e.g., '1-' → 1, '10-' → 10)"""
+        try:
+            num_part = filename.split('-')[0]
+            return int(num_part)
+        except (ValueError, IndexError):
+            return 999999  # Non-numeric files at the end
+
+    def sync_programs(self):
+        """
+        Main sync method.
+
+        Example scenario:
+          Local folder : [P01, P02, P03, ... P20]  (sorted, S3 वरून downloaded)
+          Machine      : [P01, P02, P03, P04, P05, P06]  (6 already present)
+          → slots free = 4  →  P07, P08, P09, P10 send करा
+
+          नंतर machine वरून P03 manually delete झाला:
+          → slots free = 1  →  P11 send करा  (P07–P10 already sent, त्यांना skip)
+
+        Key idea: 'sent_files' state मध्ये track होतो — कुठल्या files आधीच
+                  send केल्या आहेत ते माहीत असतं, त्यामुळे re-send होत नाही.
+        """
+
+        new_files = self.file_downloader.download_new_files()
         
-        new_program =  self.file_downloader.download_new_files()
-        if not new_program:
+        if new_files:
+            logging.info(f"downloaded new : {new_files}")
+
+        MAX_PROGRAMS = 10
+        local_folder = self.file_downloader.config["local"]["download_folder"]
+
+        # ── Step 1: Local folder — sorted order (हाच sequence) ──────────────
+        try:
+            all_local = [
+                f for f in os.listdir(local_folder)
+                if os.path.isfile(os.path.join(local_folder, f))
+            ]
+            all_local.sort(key=lambda f: self.extract_sequence_number(f))
+        except Exception as e:
+            logging.error(f"Cannot read local folder {local_folder}: {e}")
             return
         
-        logging.info(f"New program list: {new_program}")
+        local_set = set(all_local)
+        logging.info(f"Local programs ({len(all_local)}): {all_local}")
 
-        for program in new_program:
-            filename = os.path.basename(program)
-            with open(os.path.join(self.file_downloader.config['local']['download_folder'], filename), 'r') as f:
-                program_content = f.read()
-                # String → bytes convert 
-                new_program = program_content.replace("O0001", f"<{filename}>")
-                prg_bytes = new_program.encode('ascii', errors='ignore')
-                total_len = len(prg_bytes)
-                logging.info(f"Total program size: {total_len} bytes of {filename}")
+        # ── Step 2: Machine वरील programs ────────────────────────────────────
+        machine_programs = self.get_machine_program_list()
+        machine_set      = set(machine_programs)
 
-                # --- Step 2: cnc_dwnstart4 ---
-                folder_path = "//DATA_SV/"
-                dir_bytes = folder_path.encode('shift-jis', errors='replace') + b'\x00'
+        # ── Step 3: Machine वर आहे पण local मध्ये नाही → DELETE from machine ─
+        to_delete_machine = machine_set - local_set
+        if to_delete_machine:
+            logging.info(f"Deleting from machine (not in local): {to_delete_machine}")
+            for fname in to_delete_machine:
+                self._delete_machine_program(fname)
+            machine_programs = self.get_machine_program_list()
+            machine_set      = set(machine_programs)
 
-                while True:
-                    start_ret = fwlib.cnc_dwnstart4(self.handle, 0, dir_bytes)
-                    logging.info(f"cnc_dwnstart4 result: {start_ret}")
-                    if start_ret == 0 :
-                        logging.info(f"cnc_dwnstart4 result: {start_ret} )")
-                        break
-                    if start_ret == -1:
-                        logging.warning(f"cnc_dwnstart4 busy, retrying... (Code: {start_ret})")
-                        fwlib.cnc_dwnend4(self.handle)  # cleanup
-                        time.sleep(1)
-                        continue
-                    else:
-                        logging.error(f"cnc_dwnstart4 failed with code: {start_ret}")
-                        break
-                
-                EW_OK      = 0
-                EW_BUFFER  = 10
-                sent       = 0
-                BUFFER_SIZE = 4096
+        # ── Step 3.5: Local मध्ये आहे पण Machine वर नाही आणि आधी send केलेली
+        #              नाही → local मधून DELETE (machine = source of truth) ────
+        state      = self._load_send_state()
+        sent_files = state.get("sent_files", [])  # आतापर्यंत send केलेल्या files
+        sent_set   = set(sent_files)
+        
+        # Local मध्ये आहे, machine वर नाही, आणि पूर्वी send केलेली आहे
+        # म्हणजे machine वरून manually delete झाली → local मधूनही काढा
+        to_delete_local = local_set - machine_set - (local_set - sent_set)
+        # Simplified: local आणि sent आहे पण machine वर नाही
+        to_delete_local = (local_set & sent_set) - machine_set
 
-                while sent < total_len:
-                    chunk = prg_bytes[sent : sent + BUFFER_SIZE]
-                    chunk_len = len(chunk)
+        if to_delete_local:
+            logging.info(f"Deleting from local (removed from machine): {to_delete_local}")
+            for fname in to_delete_local:
+                local_path = os.path.join(local_folder, fname)
+                try:
+                    os.remove(local_path)
+                    logging.info(f"🗑️ Deleted local: {fname}")
+                except Exception as e:
+                    logging.error(f"Failed to delete local {fname}: {e}")
+            # sent_files मधूनही काढा — ते आता relevant नाहीत
+            sent_files = [f for f in sent_files if f not in to_delete_local]
+            all_local  = sorted([
+                f for f in os.listdir(local_folder)
+                if os.path.isfile(os.path.join(local_folder, f))
+            ])
+            local_set = set(all_local)
 
-                    # ctypes c_long — in/out parameter
-                    n = ctypes.c_long(chunk_len)
+        # ── Step 4: Slots free आहेत का? ──────────────────────────────────────
+        current_count = len(machine_set)
+        logging.info(f"Machine count: {current_count}/{MAX_PROGRAMS}")
 
-                    ret = fwlib.cnc_download4(
-                        self.handle,
-                        ctypes.byref(n),   # length pointer
-                        chunk              # data pointer
-                    )
-                    time.sleep(0.2)  # Small delay to prevent overwhelming the CNC
-                    logging.info(
-                        f"cnc_download4 | offset={sent} "
-                        f"| tried={chunk_len} | accepted={n.value} "
-                        f"| ret={ret}"
-                    )
+        if current_count >= MAX_PROGRAMS:
+            logging.info("Machine full (10 programs) — nothing to send")
+            self._save_send_state(sent_files)
+            return
 
-                    if ret == EW_BUFFER or ret == -1 :
-                        logging.warning(f"EW_BUFFER at offset={sent}, retrying...")
-                        continue  
+        slots_free = MAX_PROGRAMS - current_count
 
-                    elif ret == EW_OK:
-                        sent += n.value
-                        logging.info(f"Sent {sent}/{total_len} bytes")
-                    else:
-                        logging.error(f"cnc_download4 error: {ret} at offset={sent}")
-                        fwlib.cnc_dwnend4(self.handle)  # cleanup
-                        time.sleep(5)  # Wait before next attempt
-                        break 
-                end_ret = fwlib.cnc_dwnend4(self.handle)
-                logging.info(f"Finished processing {filename} with result: {end_ret}")    
-        logging.info("All data sent successfully!")
+        # ── Step 5: Candidate files — local मध्ये आहेत, machine वर नाहीत,
+        #            आणि आधी send केलेल्या नाहीत → sorted order मधून पुढचे ──
+        #
+        #  [P01 P02 P03 ... P10 | P11 P12 ... P20]
+        #   ←── already sent ──→  ←── pending ──→
+        #
+        not_yet_sent = [f for f in all_local if f not in sent_set and f not in machine_set]
+        to_send      = not_yet_sent[:slots_free]
 
-        # --- Step 4: cnc_dwnend4 ---
-        end_ret = fwlib.cnc_dwnend4(self.handle)
-        logging.info(f"cnc_dwnend4 result: {end_ret}")
+        if not to_send:
+            logging.info("No pending programs to send — queue exhausted or machine in sync")
+            self._save_send_state(sent_files)
+            return
+
+        logging.info(f"Sending {len(to_send)} programs → machine: {to_send}")
+
+        for fname in to_send:
+            full_path = os.path.join(local_folder, fname)
+            success   = self._send_program_to_machine(full_path)
+            if success:
+                sent_files.append(fname)   # pointer पुढे सरकवा
+            else:
+                logging.error(f"❌ Send failed: {fname} — stopping")
+                break
+
+        self._save_send_state(sent_files)
+        logging.info("✅ sync_programs() complete")
 
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
             fwlib.cnc_freelibhndl(self.handle)
         self.block_thread.stop()
+
+
+    # def upload_program(self,):
+        
+    #     new_program =  self.file_downloader.download_new_files()
+    #     if not new_program:
+    #         return
+        
+    #     logging.info(f"New program list: {new_program}")
+
+    #     for program in new_program:
+    #         filename = os.path.basename(program)
+    #         with open(os.path.join(self.file_downloader.config['local']['download_folder'], filename), 'r') as f:
+    #             program_content = f.read()
+    #             # String → bytes convert 
+    #             new_program = program_content.replace("O0001", f"<{filename}>")
+    #             prg_bytes = new_program.encode('ascii', errors='ignore')
+    #             total_len = len(prg_bytes)
+    #             logging.info(f"Total program size: {total_len} bytes of {filename}")
+
+    #             # --- Step 2: cnc_dwnstart4 ---
+    #             folder_path = "//DATA_SV/"
+    #             dir_bytes = folder_path.encode('shift-jis', errors='replace') + b'\x00'
+
+    #             while True:
+    #                 start_ret = fwlib.cnc_dwnstart4(self.handle, 0, dir_bytes)
+    #                 logging.info(f"cnc_dwnstart4 result: {start_ret}")
+    #                 if start_ret == 0 :
+    #                     logging.info(f"cnc_dwnstart4 result: {start_ret} )")
+    #                     break
+    #                 if start_ret == -1:
+    #                     logging.warning(f"cnc_dwnstart4 busy, retrying... (Code: {start_ret})")
+    #                     fwlib.cnc_dwnend4(self.handle)  # cleanup
+    #                     time.sleep(1)
+    #                     continue
+    #                 else:
+    #                     logging.error(f"cnc_dwnstart4 failed with code: {start_ret}")
+    #                     break
+                
+    #             EW_OK      = 0
+    #             EW_BUFFER  = 10
+    #             sent       = 0
+    #             BUFFER_SIZE = 4096
+
+    #             while sent < total_len:
+    #                 chunk = prg_bytes[sent : sent + BUFFER_SIZE]
+    #                 chunk_len = len(chunk)
+
+    #                 # ctypes c_long — in/out parameter
+    #                 n = ctypes.c_long(chunk_len)
+
+    #                 ret = fwlib.cnc_download4(
+    #                     self.handle,
+    #                     ctypes.byref(n),   # length pointer
+    #                     chunk              # data pointer
+    #                 )
+    #                 time.sleep(0.2)  # Small delay to prevent overwhelming the CNC
+    #                 logging.info(
+    #                     f"cnc_download4 | offset={sent} "
+    #                     f"| tried={chunk_len} | accepted={n.value} "
+    #                     f"| ret={ret}"
+    #                 )
+
+    #                 if ret == EW_BUFFER or ret == -1 :
+    #                     logging.warning(f"EW_BUFFER at offset={sent}, retrying...")
+    #                     continue  
+
+    #                 elif ret == EW_OK:
+    #                     sent += n.value
+    #                     logging.info(f"Sent {sent}/{total_len} bytes")
+    #                 else:
+    #                     logging.error(f"cnc_download4 error: {ret} at offset={sent}")
+    #                     fwlib.cnc_dwnend4(self.handle)  # cleanup
+    #                     time.sleep(5)  # Wait before next attempt
+    #                     break 
+    #             end_ret = fwlib.cnc_dwnend4(self.handle)
+    #             logging.info(f"Finished processing {filename} with result: {end_ret}")    
+    #     logging.info("All data sent successfully!")
+
+    # def list_dataserver_files(self):
+    #     # Initialize structures
+    #         blk_count = ctypes.c_short(1)
+    #         data_len = ctypes.c_long(1000)
+    #         prog_data = ctypes.create_string_buffer(1000)
+            
+    #         fwlib.cnc_rdexecprog(self.handle, byref(data_len), byref(blk_count), prog_data)
+    #         logging.info(f"Execution Hint: {prog_data.value.decode('ascii', errors='replace')}")
+
+    #     # 1. Initialize structures for listing
+    #         ds_file_in = IN_DSFILE()
+    #         ds_info_out = OUT_DSINFO()
+    #         ds_file_out = (OUT_DSFILE * 20)() 
+
+    #         ds_file_in.path = b"" 
+    #         ds_file_in.req_num = 20
+    #         ds_file_in.size_type = 1 
+    #         ds_file_in.detail = 0    
+
+    #         # Call listing function
+    #         ret = fwlib.cnc_rddsfile(
+    #             self.handle, 
+    #             b"DATA_SV", 
+    #             ctypes.byref(ds_file_in), 
+    #             ctypes.byref(ds_info_out), 
+    #             ctypes.byref(ds_file_out)
+    #         )
+
+    #         if ret == 0:
+    #             logging.info(f"Total files on Data Server: {ds_info_out.total}")
+
+    #             for i in range(ds_info_out.total):
+    #                 filename = ds_file_out[i].file.decode('ascii').strip('\x00')   
+    #                 logging.info(f"Starting download for: {filename}")
+
+    #                 if filename == 'PROG123':
+    #                     logging.info(f"Found target file: {filename}")
+    #                     file_path = f"//DATA_SV/{filename}"
+    #                     del_ret = fwlib.cnc_pdf_del(self.handle, b"//DATA_SV/PROG123")
+
+
+    #                 if filename == '10-16R2_S2.tap':
+
+    #                     # --- START DOWNLOAD FLOW ---
+    #                     # 2. Start the transfer for this specific file
+                        
+    #                     remote_full_path = f"//DATA_SV/{filename}".encode('shift-jis',errors='replace').rstrip(b'\x00')
+    #                     end_line_path = remote_full_path + b'\x00'
+    #                     logging.info(f"full path : {end_line_path}")
+    #                     buf_path = ctypes.create_string_buffer(end_line_path)  # Null-terminated path
+    #                     ret_upstart = fwlib.cnc_fileread_start(self.handle, 0 , buf_path)  # Start transfer
+
+    #                     err = ODBERR()
+    #                     fwlib.cnc_getdtailerr(self.handle, ctypes.byref(err))
+    #                     logging.error(f"Detail Error for {filename}: err_no={err.err_no}, err_dtl={err.err_dtno}")
+
+    #                     logging.info(f"Upstart result for {filename}: {ret_upstart}")
+
+    #                     while True:
+    #                         time.sleep(0.25)
+    #                         buf = create_string_buffer(CNC.MAX_BLOCK)
+    #                         length = c_long(CNC.MAX_BLOCK) 
+    #                         ret_upload = fwlib.cnc_fileread(self.handle, byref(length), buf)     
+    #                         logging.info(f"Upload result: {ret_upload}, bytes read: {length.value}")
+    #                         if ret_upload == 0  and length.value > 0:
+    #                             block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
+    #                             logging.info(f"blocks : {block}")
+    #                         elif ret_upload == -2:
+    #                             logging.info(f"Upload completed for {filename}")
+    #                             break
+
+    #                         elif ret_upload != 0 and ret_upload != -2:
+    #                             logging.error(f"Upload failed with code: {ret_upload}")
+    #                             break
+
+    #                     end_ref = fwlib.cnc_fileread_end(self.handle) 
+    #                     logging.info(f"Upend result for {filename}: {end_ref}")
+
+    #         else:
+    #             logging.error(f"Failed to list files. Error code: {ret}")
+
+
+
+
+
+
+
+
+
+
+
         

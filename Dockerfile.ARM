@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /humac
 COPY . /humac
 
+RUN mkdir -p /humac/gcodes
+
 RUN ldconfig
 
 RUN  pip install -r requirements.txt

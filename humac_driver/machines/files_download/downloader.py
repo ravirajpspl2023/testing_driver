@@ -37,7 +37,7 @@ class S3Downloader:
         try:
             machine_id = self.config['s3']['machineid']
             today_date = time.strftime("%Y-%m-%d")
-            prefix = f"{machine_id}_{today_date}/"
+            prefix = f"{machine_id}/{today_date}/"
             response = self.s3_client.list_objects_v2(Bucket=self.config['s3']['bucket'], Prefix=prefix)
             
             if 'Contents' not in response:
@@ -46,16 +46,21 @@ class S3Downloader:
             # self.logger.info(f"Contents: {response['Contents']}")
             current_keys = [obj['Key'] for obj in response['Contents']]
             last_state = self._load_state()
+            previous_keys = set(last_state.get('last_keys', []))
+            current_keys_set = set(current_keys)
             new_keys = [k for k in current_keys if k not in last_state.get('last_keys', [])]
 
             if new_keys:
                 logging.info(f"Found {len(new_keys)} new files")
                 for key in new_keys:
                     self._download_single_file(key)
-                self._save_state(current_keys)
-            else:
-                logging.debug("No new files")
-
+            deleted_keys = previous_keys - current_keys_set
+            if deleted_keys:
+                logging.info(f"Found {len(deleted_keys)} deleted files to remove locally")
+                for key in deleted_keys:
+                    self._delete_local_file(key)
+            self._save_state(list(current_keys_set))
+            
             return new_keys
         except (ClientError, EndpointConnectionError) as e:
             logging.warning(f"Connection issue: {e}. Reconnecting...")
@@ -85,3 +90,15 @@ class S3Downloader:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
             json.dump({"last_keys": keys, "last_updated": time.time()}, f)
+
+    def _delete_local_file(self, key):
+        
+        local_path = os.path.join(
+            self.config['local']['download_folder'], 
+            os.path.basename(key)
+        )
+        if os.path.exists(local_path):
+            os.remove(local_path)
+            logging.info(f"🗑️ Deleted local file: {local_path}")
+        else:
+            logging.warning(f"Local file not found (already deleted?): {local_path}")

@@ -7,9 +7,9 @@ s3:
   machineid : "SACNC01"
 
 local:
-  download_folder: "./"
+  download_folder: "./gcodes"
   state_file: "./.s3_downloader_state.json"
-
+  sync_state_file: "./sync_state.json" 
 polling:
   interval_seconds: 5
   max_retries: 5
