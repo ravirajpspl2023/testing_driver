@@ -35,7 +35,7 @@ class S3Downloader:
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=4, max=30))
     def download_new_files(self):
         try:
-            os.makedirs(self.file_downloader.config['local']['download_folder'], exist_ok=True)
+            os.makedirs(self.config['local']['download_folder'], exist_ok=True)
             machine_id = self.config['s3']['machineid']
             today_date = time.strftime("%Y-%m-%d")
             prefix = f"{machine_id}/{today_date}/"
