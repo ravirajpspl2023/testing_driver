@@ -39,6 +39,7 @@ class S3Downloader:
             machine_id = self.config['s3']['machineid']
             today_date = time.strftime("%Y-%m-%d")
             prefix = f"{machine_id}/{today_date}/"
+            logging.info(f"Checking for new files with prefix: {prefix}")
             response = self.s3_client.list_objects_v2(Bucket=self.config['s3']['bucket'], Prefix=prefix)
             
             if 'Contents' not in response:
