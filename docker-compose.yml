@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ARM
-    container_name: Humac_fanuc_driver
-    image: humac_fanuc_image
+    container_name: Humac_driver_gcode
+    image: humac_image_gcode
     restart: unless-stopped
     privileged: true
     network_mode: host
