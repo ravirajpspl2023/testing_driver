@@ -14,6 +14,7 @@ class S3Downloader:
     def __init__(self,):
         self.config = load_config()
         self.s3_client = None
+        os.makedirs(self.config['local']['download_folder'], exist_ok=True)
         self.connect()
         
     def connect(self):
@@ -35,15 +36,11 @@ class S3Downloader:
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=4, max=30))
     def download_new_files(self):
         try:
-            os.makedirs(self.config['local']['download_folder'], exist_ok=True)
             machine_id = self.config['s3']['machineid']
             today_date = time.strftime("%Y-%m-%d")
             prefix = f"{machine_id}/{today_date}"
-            logging.info(f"Checking for new files with prefix: {prefix}")
-            response = self.s3_client.list_objects_v2(Bucket=self.config['s3']['bucket'], Prefix=prefix)
-            
+            response = self.s3_client.list_objects_v2(Bucket=self.config['s3']['bucket'], Prefix=prefix)      
             if 'Contents' not in response:
-                logging.info(f'{prefix} No files found in S3 bucket.')
                 return []
             # self.logger.info(f"Contents: {response['Contents']}")
             current_keys = [obj['Key'] for obj in response['Contents']]

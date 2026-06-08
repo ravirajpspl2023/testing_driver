@@ -131,7 +131,7 @@ class FocasDriver(object):
                     if ret_upload == 0  and length.value > 0:
                         block = buf.raw[:length.value].decode('utf-8', errors='ignore').strip('\x00')
                         program_content.append(block)
-                        if len(program_content) >=6:
+                        if len(program_content) >=4:
                             chunk += 1
                             data['chunk'] = chunk
                             data['program'] = json.dumps(program_content)
@@ -372,11 +372,8 @@ class FocasDriver(object):
                   send केल्या आहेत ते माहीत असतं, त्यामुळे re-send होत नाही.
         """
 
-        new_files = self.file_downloader.download_new_files()
+        self.file_downloader.download_new_files()
         
-        if new_files:
-            logging.info(f"downloaded new : {new_files}")
-
         MAX_PROGRAMS = 10
         local_folder = self.file_downloader.config["local"]["download_folder"]
 
@@ -439,8 +436,7 @@ class FocasDriver(object):
 
         # ── Step 4: Slots free आहेत का? ──────────────────────────────────────
         current_count = len(machine_set)
-        logging.info(f"Machine count: {current_count}/{MAX_PROGRAMS}")
-
+        # logging.info(f"Machine count: {current_count}/{MAX_PROGRAMS}")
         if current_count >= MAX_PROGRAMS:
             logging.info("Machine full (10 programs) — nothing to send")
             self._save_send_state(sent_files)
