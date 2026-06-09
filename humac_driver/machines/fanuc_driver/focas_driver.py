@@ -244,7 +244,7 @@ class FocasDriver(object):
             if fname:
                 programs.append(fname)
 
-        logging.info(f"Machine programs ({len(programs)}): {programs}")
+        # logging.info(f"Machine programs ({len(programs)}): {programs}")
         return programs
     
     def _send_program_to_machine(self, local_filepath: str) -> bool:
@@ -390,8 +390,7 @@ class FocasDriver(object):
             return
         
         local_set = set(all_local)
-        logging.info(f"Local programs ({len(all_local)}): {all_local}")
-
+        # logging.info(f"Local programs ({len(all_local)}): {all_local}")
         # ── Step 2: Machine वरील programs ────────────────────────────────────
         machine_programs = self.get_machine_program_list()
         machine_set      = set(machine_programs)
@@ -471,6 +470,59 @@ class FocasDriver(object):
 
         self._save_send_state(sent_files)
         logging.info("✅ sync_programs() complete")
+
+    
+    def get_dnc_file(self, dev_name: str = "DATA_SV") -> dict:
+        """
+        DATA SERVER वर DNC operation साठी set केलेला file name वाचतो.
+        
+        Args:
+            dev_name: "DATA_SV"     → DATA SERVER (Storage mode)
+                    "DTSVR_HOST"  → DATA SERVER Host (FTP/buffer mode)
+        
+        Returns:
+            {
+                "ret":      int,   # 0 = EW_OK, बाकी error
+                "dnc_file": str,   # full path, e.g. "//DATA_SV/10-PART_A.tap"
+                "host":     int,   # host number (फक्त DTSVR_HOST साठी, बाकी 0)
+            }
+        """
+        func = fwlib.cnc_rddsdncfile
+        func.restype  = c_short
+        func.argtypes = [
+            c_ushort,          # FlibHndl
+            c_char_p,          # dev_name  [in]
+            ctypes.POINTER(c_short),   # host      [out]
+            c_char_p,          # dncfile   [out]
+        ]
+
+        dev_bytes  = dev_name.encode("ascii") + b"\x00"
+        host_val   = c_short(0)
+        dnc_buf    = ctypes.create_string_buffer(256)   # 256 bytes — docs नुसार
+
+        ret = func(
+            self.handle,
+            dev_bytes,
+            ctypes.byref(host_val),
+            dnc_buf
+        )
+
+        dnc_file = dnc_buf.value.decode("ascii", errors="replace").strip("\x00").strip()
+
+        if ret == 0:
+            logging.info(f"DNC file: '{dnc_file}' | host: {host_val.value}")
+        elif ret == 6:   # EW_NOOPT
+            logging.warning(f"cnc_rddsdncfile: No DATA SERVER option (EW_NOOPT)")
+        elif ret == 5:   # EW_DATA
+            logging.error(f"cnc_rddsdncfile: Wrong dev_name '{dev_name}' (EW_DATA)")
+        else:
+            logging.error(f"cnc_rddsdncfile failed: ret={ret}")
+
+        return {
+            "ret":      ret,
+            "dnc_file": dnc_file,
+            "host":     host_val.value,
+        }
 
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:

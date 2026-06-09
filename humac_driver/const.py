@@ -17,7 +17,7 @@ MQTT_CLI = "C42"
 
 config = {
         "machines":[
-           {"fanuc":{"ip":"192.168.0.2", "port":8193,"timeout":5,"edgid" :"ed4200002" , "machineid":"C42"}},
+           {"fanuc":{"ip":"192.168.0.51", "port":8193,"timeout":5,"edgid" :"ed4200018" , "machineid":"FDPLVMC01"}},
           #  {"hass":{"ip":"192.168.0.2", "port":8082,"timeout":5,"edgid" :"ed4200022" , "machineid":"SACNC02"}},
         ]
     }

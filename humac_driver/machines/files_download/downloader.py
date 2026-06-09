@@ -60,7 +60,6 @@ class S3Downloader:
                     self._delete_local_file(key)
             self._save_state(list(current_keys_set))
             
-            return new_keys
         except (ClientError, EndpointConnectionError) as e:
             logging.warning(f"Connection issue: {e}. Reconnecting...")
             self.connect()
