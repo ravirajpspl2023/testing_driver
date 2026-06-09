@@ -30,8 +30,8 @@ class Machine(mp.Process):
         pid = os.getpid()
         self.driver = FocasDriver(self.config)
         try:           
-            file_info = self.driver.get_dnc_file()
-            logging.info(f"Initial DNC file info: {file_info}")
+            pointer = self.driver.get_selected_dnc_file("DATA_SV")
+            logging.info(f"Initial main program: {pointer}")  
             while True:
                 # self.driver.sync_programs()
                 data = self.driver.get_cnc_program_detais()

@@ -471,58 +471,44 @@ class FocasDriver(object):
         self._save_send_state(sent_files)
         logging.info("✅ sync_programs() complete")
 
-    
-    def get_dnc_file(self, dev_name: str = "DATA_SV") -> dict:
-        """
-        DATA SERVER वर DNC operation साठी set केलेला file name वाचतो.
+    def get_selected_dnc_file(self, device_name="DATA_SV"):
+        host_number = ctypes.c_short(0)                     # short *host sathi
+        file_name_buffer = ctypes.create_string_buffer(256) # char *dncfile (256 bytes cha buffer)
         
-        Args:
-            dev_name: "DATA_SV"     → DATA SERVER (Storage mode)
-                    "DTSVR_HOST"  → DATA SERVER Host (FTP/buffer mode)
-        
-        Returns:
-            {
-                "ret":      int,   # 0 = EW_OK, बाकी error
-                "dnc_file": str,   # full path, e.g. "//DATA_SV/10-PART_A.tap"
-                "host":     int,   # host number (फक्त DTSVR_HOST साठी, बाकी 0)
-            }
-        """
-        func = fwlib.cnc_rddsdncfile
-        func.restype  = c_short
-        func.argtypes = [
-            c_ushort,          # FlibHndl
-            c_char_p,          # dev_name  [in]
-            ctypes.POINTER(c_short),   # host      [out]
-            c_char_p,          # dncfile   [out]
-        ]
+        try:
+            # Best Practice: Type safety sathi argtypes ani restype आधी define करा
+            fwlib.cnc_rddsdncfile.argtypes = [
+                ctypes.c_ushort,                 # FlibHndl
+                ctypes.c_char_p,                 # dev_name
+                ctypes.POINTER(ctypes.c_short),  # *host
+                ctypes.c_char_p                  # *dncfile
+            ]
+            fwlib.cnc_rddsdncfile.restype = ctypes.c_short
 
-        dev_bytes  = dev_name.encode("ascii") + b"\x00"
-        host_val   = c_short(0)
-        dnc_buf    = ctypes.create_string_buffer(256)   # 256 bytes — docs नुसार
-
-        ret = func(
-            self.handle,
-            dev_bytes,
-            ctypes.byref(host_val),
-            dnc_buf
-        )
-
-        dnc_file = dnc_buf.value.decode("ascii", errors="replace").strip("\x00").strip()
-
-        if ret == 0:
-            logging.info(f"DNC file: '{dnc_file}' | host: {host_val.value}")
-        elif ret == 6:   # EW_NOOPT
-            logging.warning(f"cnc_rddsdncfile: No DATA SERVER option (EW_NOOPT)")
-        elif ret == 5:   # EW_DATA
-            logging.error(f"cnc_rddsdncfile: Wrong dev_name '{dev_name}' (EW_DATA)")
-        else:
-            logging.error(f"cnc_rddsdncfile failed: ret={ret}")
-
-        return {
-            "ret":      ret,
-            "dnc_file": dnc_file,
-            "host":     host_val.value,
-        }
+            # UPDATE 1 & 2: 'device_name.encode()' pathvla ani host sobat 'ctypes.byref' vaparla
+            ret = fwlib.cnc_rddsdncfile(
+                self.handle, 
+                device_name.encode('utf-8'), 
+                ctypes.byref(host_number), 
+                file_name_buffer
+            )
+            
+            if ret == 0:
+                # UTF-8 decode karne jast safe rahil standard files sathi
+                dnc_file = file_name_buffer.value.decode('utf-8', errors='ignore').rstrip('\x00')
+                
+                # UPDATE 3: host_number chya jagi 'host_number.value' vaparla
+                logging.info(f"Selected DNC file on {device_name}: {dnc_file} host : {host_number.value}")
+                
+                # UI la data denyasathi return statement add kela
+                return {"status": "SUCCESS", "file_name": dnc_file, "host": host_number.value}
+            else:
+                logging.error(f"Focas Error Code: {ret} while reading DNC file.")
+                return {"status": "FOCAS_ERROR", "error_code": ret}
+                
+        except Exception as e:
+            logging.error(f"Error reading DNC file: {e}")
+            return {"status": "EXCEPTION", "error_msg": str(e)}
 
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
