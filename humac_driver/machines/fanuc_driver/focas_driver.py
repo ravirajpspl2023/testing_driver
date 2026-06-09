@@ -104,7 +104,7 @@ class FocasDriver(object):
             if result == 0 :
                 # logging.info(f"result: {result} value: {buf.value}")
                 # # Correct path – try without extra '/' or with 'MEMORY/' if DATA_SV fails
-                name_str = f"//DATA_SV/11-8R1-S1.tap/O0001"  # or "DATA_SV/lb44.nc" try kara
+                name_str = f"//DATA_SV/11-8R1-S1.tap/O1"  # or "DATA_SV/lb44.nc" try kara
                 # name_bytes = buf.value.rstrip(b'\x00') + b'\x00'
                 name_bytes = name_str.encode('shift-jis', errors='replace') + b'\x00'  # Shift-JIS encoding for Japanese characters, with null terminator
 
