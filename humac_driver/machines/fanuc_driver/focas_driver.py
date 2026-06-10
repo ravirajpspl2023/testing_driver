@@ -359,128 +359,6 @@ class FocasDriver(object):
         except (ValueError, IndexError):
             return 999999  # Non-numeric files at the end
 
-    def sync_programs(self):
-        """
-        Main sync method.
-
-        Example scenario:
-          Local folder : [P01, P02, P03, ... P20]  (sorted, S3 वरून downloaded)
-          Machine      : [P01, P02, P03, P04, P05, P06]  (6 already present)
-          → slots free = 4  →  P07, P08, P09, P10 send करा
-
-          नंतर machine वरून P03 manually delete झाला:
-          → slots free = 1  →  P11 send करा  (P07–P10 already sent, त्यांना skip)
-
-        Key idea: 'sent_files' state मध्ये track होतो — कुठल्या files आधीच
-                  send केल्या आहेत ते माहीत असतं, त्यामुळे re-send होत नाही.
-        """
-
-        self.file_downloader.download_new_files()
-        
-        MAX_PROGRAMS = 10
-        local_folder = self.file_downloader.config["local"]["download_folder"]
-
-        # ── Step 1: Local folder — sorted order (हाच sequence) ──────────────
-        try:
-            all_local = [
-                f for f in os.listdir(local_folder)
-                if os.path.isfile(os.path.join(local_folder, f))
-            ]
-            all_local.sort(key=lambda f: self.extract_sequence_number(f))
-        except Exception as e:
-            logging.error(f"Cannot read local folder {local_folder}: {e}")
-            os.makedirs(self.file_downloader.config['local']['download_folder'], exist_ok=True)
-            return
-        
-        local_set = set(all_local)
-        # logging.info(f"Local programs ({len(all_local)}): {all_local}")
-        # ── Step 2: Machine वरील programs ────────────────────────────────────
-        machine_programs = self.get_machine_program_list()
-        machine_set      = set(machine_programs)
-
-        # # ── Step 3: Machine वर आहे पण local मध्ये नाही → DELETE from machine ─
-        # to_delete_machine = machine_set - local_set
-        # if to_delete_machine:
-        #     logging.info(f"Deleting from machine (not in local): {to_delete_machine}")
-        #     for fname in to_delete_machine:
-        #         self._delete_machine_program(fname)
-        #     machine_programs = self.get_machine_program_list()
-        #     machine_set      = set(machine_programs)
-
-        # ── Step 3.5: Local मध्ये आहे पण Machine वर नाही आणि आधी send केलेली
-        #              नाही → local मधून DELETE (machine = source of truth) ────
-        state      = self._load_send_state()
-        sent_files = state.get("sent_files", [])  # आतापर्यंत send केलेल्या files
-        sent_set   = set(sent_files)
-        
-        # Local मध्ये आहे, machine वर नाही, आणि पूर्वी send केलेली आहे
-        # म्हणजे machine वरून manually delete झाली → local मधूनही काढा
-        to_delete_local = local_set - machine_set - (local_set - sent_set)
-        # Simplified: local आणि sent आहे पण machine वर नाही
-        to_delete_local = (local_set & sent_set) - machine_set
-
-        if to_delete_local:
-            logging.info(f"Deleting from local (removed from machine): {to_delete_local}")
-            for fname in to_delete_local:
-                local_path = os.path.join(local_folder, fname)
-                try:
-                    os.remove(local_path)
-                    logging.info(f"🗑️ Deleted local: {fname}")
-                except Exception as e:
-                    logging.error(f"Failed to delete local {fname}: {e}")
-            # sent_files मधूनही काढा — ते आता relevant नाहीत
-            sent_files = [f for f in sent_files if f not in to_delete_local]
-            all_local  = sorted([
-                f for f in os.listdir(local_folder)
-                if os.path.isfile(os.path.join(local_folder, f))
-            ])
-            local_set = set(all_local)
-
-        # ── Step 4: Slots free आहेत का? ──────────────────────────────────────
-        current_count = len(machine_set)
-        # logging.info(f"Machine count: {current_count}/{MAX_PROGRAMS}")
-        if current_count >= MAX_PROGRAMS:
-            logging.info("Machine full (10 programs) — nothing to send")
-            self._save_send_state(sent_files)
-            return
-
-        slots_free = MAX_PROGRAMS - current_count
-
-        # ── Step 5: Candidate files — local मध्ये आहेत, machine वर नाहीत,
-        #            आणि आधी send केलेल्या नाहीत → sorted order मधून पुढचे ──
-        #
-        #  [P01 P02 P03 ... P10 | P11 P12 ... P20]
-        #   ←── already sent ──→  ←── pending ──→
-        #
-        not_yet_sent = [f for f in all_local if f not in sent_set and f not in machine_set]
-        to_send      = not_yet_sent[:slots_free]
-
-        if not to_send:
-            logging.info("No pending programs to send — queue exhausted or machine in sync")
-            self._save_send_state(sent_files)
-            return
-
-        logging.info(f"Sending {len(to_send)} programs → machine: {to_send}")
-
-        for fname in to_send:
-            full_path = os.path.join(local_folder, fname)
-            success   = self._send_program_to_machine(full_path)
-            if success:
-                sent_files.append(fname)   # pointer पुढे सरकवा
-                data = {"ts": time.time_ns() // 1_000_000,
-                        "edgeid": self.edgeid,
-                        "filename": fname,
-                        'drive': 'DATA_SV',
-                        "memory_use": 32412}
-                self.redis_trig.xadd('trigger',data)
-                
-            else:
-                logging.error(f"❌ Send failed: {fname} — stopping")
-                break
-
-        self._save_send_state(sent_files)
-        logging.info("✅ sync_programs() complete")
-
     def get_selected_dnc_file(self, device_name="DATA_SV"):
         host_number = ctypes.c_short(0)                     # short *host sathi
         file_name_buffer = ctypes.create_string_buffer(256) # char *dncfile (256 bytes cha buffer)
@@ -519,11 +397,224 @@ class FocasDriver(object):
         except Exception as e:
             logging.error(f"Error reading DNC file: {e}")
             return {"status": "EXCEPTION", "error_msg": str(e)}
+        
+    def sync_programs(self):
+        """
+        Sync logic:
+
+        1. S3 वरून नवीन files download करा
+        2. Local folder मधील files sequence number ने sort करा (1-xxx, 2-xxx, ...)
+        3. Machine वर किती programs आहेत ते check करा
+        4. slots_needed = 10 - machine_count
+           → local मधून sequence order मध्ये पहिले `slots_needed` files send करा
+        5. प्रत्येक file send झाल्यावर:
+           → local folder मधून delete करा
+           → state file मधून काढा
+        """
+
+        # ── Step 1: S3 वरून नवीन files download करा ─────────────────────────
+        self.file_downloader.download_new_files()
+        MAX_PROGRAMS  = 10
+        local_folder  = self.file_downloader.config["local"]["download_folder"]
+
+        # ── Step 2: Local files — sequence number ने sort करा ────────────────
+        try:
+            all_local = [
+                f for f in os.listdir(local_folder)
+                if os.path.isfile(os.path.join(local_folder, f))
+            ]
+            all_local.sort(key=lambda f: self.extract_sequence_number(f))
+        except Exception as e:
+            logging.error(f"Cannot read local folder '{local_folder}': {e}")
+            return
+
+        if not all_local:
+            return
+
+        # ── Step 3: Machine वर किती programs आहेत? ───────────────────────────
+        machine_programs = self.get_machine_program_list()
+        machine_count    = len(machine_programs)
+
+        if machine_count >= MAX_PROGRAMS:
+            logging.info("Machine full (10/10) — nothing to send")
+            return
+
+        # ── Step 4: Send करायच्या files निवडा ───────────────────────────────
+        slots_needed = MAX_PROGRAMS - machine_count
+        to_send      = all_local[:slots_needed]
+
+        logging.info(f"Slots free: {slots_needed} | Will send: {to_send}")
+
+        # ── Step 5: Send करा → यशस्वी झाल्यावर local + state मधून delete ───
+        state      = self._load_send_state()
+        sent_files = state.get("sent_files", [])
+
+        for fname in to_send:
+            full_path = os.path.join(local_folder, fname)
+
+            if not os.path.exists(full_path):
+                logging.warning(f"File not found, skipping: {fname}")
+                continue
+            
+            logging.info(f"Sending → {fname}")
+            success = self._send_program_to_machine(full_path)
+
+            if success:
+                logging.info(f"✅ Sent: {fname}")
+                data = {"ts": time.time_ns() // 1_000_000,
+                        "edgeid": self.edgeid,
+                        "filename": fname,
+                        'drive': 'DATA_SV',
+                        "memory_use": 32412}
+                self.redis_trig.xadd('trigger',data)
+                try:
+                    os.remove(full_path)
+                    logging.info(f"🗑️  Local deleted: {fname}")
+                except Exception as e:
+                    logging.error(f"Local delete failed for '{fname}': {e}")
+
+                # State file मधून काढा (जर आधी track होती तर)
+                if fname in sent_files:
+                    sent_files.remove(fname)
+                self._save_send_state(sent_files)
+
+            else:
+                logging.error(f"❌ Send failed: {fname} — stopping sync")
+                break
+
+        logging.info("✅ sync_programs() done")
 
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
             fwlib.cnc_freelibhndl(self.handle)
         self.block_thread.stop()
+
+
+
+
+
+
+    # def sync_programs(self):
+    #     """
+    #     Main sync method.
+
+    #     Example scenario:
+    #       Local folder : [P01, P02, P03, ... P20]  (sorted, S3 वरून downloaded)
+    #       Machine      : [P01, P02, P03, P04, P05, P06]  (6 already present)
+    #       → slots free = 4  →  P07, P08, P09, P10 send करा
+
+    #       नंतर machine वरून P03 manually delete झाला:
+    #       → slots free = 1  →  P11 send करा  (P07–P10 already sent, त्यांना skip)
+
+    #     Key idea: 'sent_files' state मध्ये track होतो — कुठल्या files आधीच
+    #               send केल्या आहेत ते माहीत असतं, त्यामुळे re-send होत नाही.
+    #     """
+
+    #     self.file_downloader.download_new_files()
+        
+    #     MAX_PROGRAMS = 10
+    #     local_folder = self.file_downloader.config["local"]["download_folder"]
+
+    #     # ── Step 1: Local folder — sorted order (हाच sequence) ──────────────
+    #     try:
+    #         all_local = [
+    #             f for f in os.listdir(local_folder)
+    #             if os.path.isfile(os.path.join(local_folder, f))
+    #         ]
+    #         all_local.sort(key=lambda f: self.extract_sequence_number(f))
+    #     except Exception as e:
+    #         logging.error(f"Cannot read local folder {local_folder}: {e}")
+    #         os.makedirs(self.file_downloader.config['local']['download_folder'], exist_ok=True)
+    #         return
+    #     if not all_local :
+    #         return
+    #     local_set = set(all_local)
+    #     # logging.info(f"Local programs ({len(all_local)}): {all_local}")
+    #     # ── Step 2: Machine वरील programs ────────────────────────────────────
+    #     machine_programs = self.get_machine_program_list()
+    #     machine_set      = set(machine_programs)
+    #     # # ── Step 3: Machine वर आहे पण local मध्ये नाही → DELETE from machine ─
+    #     # to_delete_machine = machine_set - local_set
+    #     # if to_delete_machine:
+    #     #     logging.info(f"Deleting from machine (not in local): {to_delete_machine}")
+    #     #     for fname in to_delete_machine:
+    #     #         self._delete_machine_program(fname)
+    #     #     machine_programs = self.get_machine_program_list()
+    #     #     machine_set      = set(machine_programs)
+
+    #     # ── Step 3.5: Local मध्ये आहे पण Machine वर नाही आणि आधी send केलेली
+    #     #              नाही → local मधून DELETE (machine = source of truth) ────
+    #     state      = self._load_send_state()
+    #     sent_files = state.get("sent_files", [])  # आतापर्यंत send केलेल्या files
+    #     sent_set   = set(sent_files)
+        
+    #     # Local मध्ये आहे, machine वर नाही, आणि पूर्वी send केलेली आहे
+    #     # म्हणजे machine वरून manually delete झाली → local मधूनही काढा
+    #     # to_delete_local = local_set - machine_set - (local_set - sent_set)
+    #     # # Simplified: local आणि sent आहे पण machine वर नाही
+    #     # to_delete_local = (local_set & sent_set) - machine_set
+
+    #     # if to_delete_local:
+    #     #     logging.info(f"Deleting from local (removed from machine): {to_delete_local}")
+    #     #     for fname in to_delete_local:
+    #     #         local_path = os.path.join(local_folder, fname)
+    #     #         try:
+    #     #             os.remove(local_path)
+    #     #             logging.info(f"🗑️ Deleted local: {fname}")
+    #     #         except Exception as e:
+    #     #             logging.error(f"Failed to delete local {fname}: {e}")
+    #     #     # sent_files मधूनही काढा — ते आता relevant नाहीत
+    #     #     sent_files = [f for f in sent_files if f not in to_delete_local]
+    #     #     all_local  = sorted([
+    #     #         f for f in os.listdir(local_folder)
+    #     #         if os.path.isfile(os.path.join(local_folder, f))
+    #     #     ])
+    #     #     local_set = set(all_local)
+
+    #     # ── Step 4: Slots free आहेत का? ──────────────────────────────────────
+    #     current_count = len(machine_set)
+    #     # logging.info(f"Machine count: {current_count}/{MAX_PROGRAMS}")
+    #     if current_count >= MAX_PROGRAMS:
+    #         # logging.info("Machine full (10 programs) — nothing to send")
+    #         self._save_send_state(sent_files)
+    #         return
+
+    #     slots_free = MAX_PROGRAMS - current_count
+
+    #     # ── Step 5: Candidate files — local मध्ये आहेत, machine वर नाहीत,
+    #     #            आणि आधी send केलेल्या नाहीत → sorted order मधून पुढचे ──
+    #     #
+    #     #  [P01 P02 P03 ... P10 | P11 P12 ... P20]
+    #     #   ←── already sent ──→  ←── pending ──→
+    #     #
+    #     not_yet_sent = [f for f in all_local if f not in sent_set and f not in machine_set]
+    #     to_send      = not_yet_sent[:slots_free]
+
+    #     if not to_send:
+    #         logging.info("No pending programs to send — queue exhausted or machine in sync")
+    #         self._save_send_state(sent_files)
+    #         return
+
+    #     logging.info(f"Sending {len(to_send)} programs → machine: {to_send}")
+
+    #     for fname in to_send:
+    #         full_path = os.path.join(local_folder, fname)
+    #         success   = self._send_program_to_machine(full_path)
+    #         if success:
+    #             sent_files.append(fname)   # pointer पुढे सरकवा
+    #             data = {"ts": time.time_ns() // 1_000_000,
+    #                     "edgeid": self.edgeid,
+    #                     "filename": fname,
+    #                     'drive': 'DATA_SV',
+    #                     "memory_use": 32412}
+    #             self.redis_trig.xadd('trigger',data)
+                
+    #         else:
+    #             logging.error(f"❌ Send failed: {fname} — stopping")
+    #             break
+
+    #     self._save_send_state(sent_files)
+    #     logging.info("✅ sync_programs() complete")
 
 
     # def upload_program(self,):
