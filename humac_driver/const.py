@@ -12,6 +12,7 @@ MQTT_PORT = 1883
 # TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
+TOPIC_TRIG = "pspl-iot/telemetry_cnc/trigger"
 MQTT_PASS = None
 MQTT_CLI = "SACNC01"
 

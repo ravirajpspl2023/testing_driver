@@ -21,6 +21,8 @@ class MqttPublisher(Process):
             self.mqtt_topic = TOPIC_PRO
         if self.stream == "block":
             self.mqtt_topic = TOPIC_BLK
+        if self.stream == "trigger":
+            self.mqtt_topic = TOPIC_TRIG
         self.password = None
         self.client = None
         self.start()

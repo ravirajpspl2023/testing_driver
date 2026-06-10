@@ -50,6 +50,7 @@ class FocasDriver(object):
         self.previous_program_number = None
         self.edgeid = config['edgid']
         self.redis=  RedisConnection("program").connect()
+        self.redis_trig = RedisConnection("trigger").connect()
         self.previous_date = None
         self.lock = threading.Lock()
         self.block_thread = BlockThread(config) 
@@ -397,14 +398,14 @@ class FocasDriver(object):
         machine_programs = self.get_machine_program_list()
         machine_set      = set(machine_programs)
 
-        # ── Step 3: Machine वर आहे पण local मध्ये नाही → DELETE from machine ─
-        to_delete_machine = machine_set - local_set
-        if to_delete_machine:
-            logging.info(f"Deleting from machine (not in local): {to_delete_machine}")
-            for fname in to_delete_machine:
-                self._delete_machine_program(fname)
-            machine_programs = self.get_machine_program_list()
-            machine_set      = set(machine_programs)
+        # # ── Step 3: Machine वर आहे पण local मध्ये नाही → DELETE from machine ─
+        # to_delete_machine = machine_set - local_set
+        # if to_delete_machine:
+        #     logging.info(f"Deleting from machine (not in local): {to_delete_machine}")
+        #     for fname in to_delete_machine:
+        #         self._delete_machine_program(fname)
+        #     machine_programs = self.get_machine_program_list()
+        #     machine_set      = set(machine_programs)
 
         # ── Step 3.5: Local मध्ये आहे पण Machine वर नाही आणि आधी send केलेली
         #              नाही → local मधून DELETE (machine = source of truth) ────
@@ -466,6 +467,13 @@ class FocasDriver(object):
             success   = self._send_program_to_machine(full_path)
             if success:
                 sent_files.append(fname)   # pointer पुढे सरकवा
+                data = {"ts": time.time_ns() // 1_000_000,
+                        "edgeid": self.edgeid,
+                        "filename": fname,
+                        'drive': 'DATA_SV',
+                        "memory_use": 32412}
+                self.redis_trig.xadd('trigger',data)
+                
             else:
                 logging.error(f"❌ Send failed: {fname} — stopping")
                 break

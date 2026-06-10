@@ -14,7 +14,7 @@ class HumacDriver(object):
     def __init__(self,):
         self.machines_list = config.get('machines',None)
         self.machines = []
-        self.streams = ['program','block']
+        self.streams = ['program','block','trigger']
         self.connecte_with_machine()
         # self.waiting()
 

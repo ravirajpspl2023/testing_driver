@@ -50,6 +50,7 @@ class BlockThread(threading.Thread):
         self.handle = None
         self._stop_event = threading.Event()
         self.redis=  RedisConnection("block").connect()
+        self.drive = "DATA_SV"
         self.previous_block = -1
         self.blk_no = c_long()
         self.start()
@@ -107,6 +108,20 @@ class BlockThread(threading.Thread):
         if result != 0 :
             self.connect()
             time.sleep(1)
+    def program_name(self,device_name="DATA_SV"):
+        host_number = ctypes.c_short(0)                     # short *host sathi
+        file_name_buffer = ctypes.create_string_buffer(256)
+        ret = fwlib.cnc_rddsdncfile(
+                self.handle, 
+                device_name.encode('utf-8'), 
+                ctypes.byref(host_number), 
+                file_name_buffer
+            )
+        if ret == 0:
+                dnc_file = file_name_buffer.value.decode('utf-8', errors='ignore').rstrip('\x00').split('/')[-1]  # Get the file name without path
+                return dnc_file
+        
+        return None
 
     def run(self):
         self.connect()
@@ -119,7 +134,7 @@ class BlockThread(threading.Thread):
                     gcode_data['time'] = round(time.perf_counter()-start_time, 4)
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
-                    gcode_data['program_No'] = CNC.PROGRAME_NAME 
+                    gcode_data['program_No'] = self.program_name()
                     gcode_data['edgeid'] = self.edgeid
                     self.previous_block = self.blk_no.value
                     # logging.info(f"{gcode_data}")
