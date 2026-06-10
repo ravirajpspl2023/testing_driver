@@ -55,6 +55,7 @@ class FocasDriver(object):
         self.lock = threading.Lock()
         self.block_thread = BlockThread(config) 
         self.file_downloader = S3Downloader()
+        self.memory_use = None
 
         self.connect()
     
@@ -106,9 +107,9 @@ class FocasDriver(object):
             if result == 0 :
                 # logging.info(f"result: {result} value: {buf.value}")
                 # # Correct path – try without extra '/' or with 'MEMORY/' if DATA_SV fails
-                name_str = f"//DATA_SV/11-8R1-S1.tap/O1"  # or "DATA_SV/lb44.nc" try kara
-                # name_bytes = buf.value.rstrip(b'\x00') + b'\x00'
-                name_bytes = name_str.encode('shift-jis', errors='replace') + b'\x00'  # Shift-JIS encoding for Japanese characters, with null terminator
+                # name_str = f"//DATA_SV/11-8R1-S1.tap/O1"  # or "DATA_SV/lb44.nc" try kara
+                name_bytes = buf.value.rstrip(b'\x00') + b'\x00'
+                # name_bytes = name_str.encode('shift-jis', errors='replace') + b'\x00'  # Shift-JIS encoding for Japanese characters, with null terminator
 
                 # path = f"//CNC_MEM/USER/1"
                 name_ptr = ctypes.create_string_buffer(name_bytes)
@@ -365,15 +366,6 @@ class FocasDriver(object):
         file_name_buffer = ctypes.create_string_buffer(256) # char *dncfile (256 bytes cha buffer)
         
         try:
-            # Best Practice: Type safety sathi argtypes ani restype आधी define करा
-            fwlib.cnc_rddsdncfile.argtypes = [
-                ctypes.c_ushort,                 # FlibHndl
-                ctypes.c_char_p,                 # dev_name
-                ctypes.POINTER(ctypes.c_short),  # *host
-                ctypes.c_char_p                  # *dncfile
-            ]
-            fwlib.cnc_rddsdncfile.restype = ctypes.c_short
-
             # UPDATE 1 & 2: 'device_name.encode()' pathvla ani host sobat 'ctypes.byref' vaparla
             ret = fwlib.cnc_rddsdncfile(
                 self.handle, 
@@ -399,6 +391,32 @@ class FocasDriver(object):
             logging.error(f"Error reading DNC file: {e}")
             return {"status": "EXCEPTION", "error_msg": str(e)}
         
+    
+    def drive_memory(self,drive_name="DATA_SV"):
+
+        pdf_inf = ODBPDFINF()
+        size_kind = ctypes.c_short(3)
+        ret = fwlib.cnc_rdpdf_inf(
+                self.handle, 
+                drive_name.encode("shift-jis", errors="replace"), 
+                size_kind, 
+                ctypes.byref(pdf_inf)
+            )
+        if ret == 0:
+            total_space = pdf_inf.all_page
+            used_space = pdf_inf.used_page
+            free_space = total_space - used_space  # Total madhun Used minus kela
+            if total_space > 0:
+                used_percentage = round((used_space / total_space) * 100, 2)
+                if self.memory_use != used_percentage:
+                    self.memory_use = used_percentage
+                    logging.info(f"total_space: {total_space} | used_space: {used_space} | free_space: {free_space}")
+            else:
+                self.memory_use = 0.0
+        else:
+            logging.error(f"cnc_rdpdf_inf failed with error code: {ret}")
+            self.memory_use = 0.0
+        
     def sync_programs(self):
         """
         Sync logic:
@@ -415,6 +433,9 @@ class FocasDriver(object):
 
         # ── Step 1: S3 वरून नवीन files download करा ─────────────────────────
         self.file_downloader.download_new_files()
+        self.drive_memory()
+        if self.memory_use > 70:
+            return
         MAX_PROGRAMS  = 10
         local_folder  = self.file_downloader.config["local"]["download_folder"]
 
@@ -435,8 +456,8 @@ class FocasDriver(object):
         # ── Step 3: Machine वर किती programs आहेत? ───────────────────────────
         machine_programs = self.get_machine_program_list()
         machine_count    = len(machine_programs)
-
-        if machine_count >= MAX_PROGRAMS:
+        
+        if machine_count >= MAX_PROGRAMS :
             logging.info("Machine full (10/10) — nothing to send")
             return
 
@@ -452,7 +473,6 @@ class FocasDriver(object):
 
         for fname in to_send:
             full_path = os.path.join(local_folder, fname)
-
             if not os.path.exists(full_path):
                 logging.warning(f"File not found, skipping: {fname}")
                 continue
@@ -468,7 +488,7 @@ class FocasDriver(object):
                         "filename": fname,
                         'drive': 'DATA_SV',
                         "tenantID" : TENANT_ID,
-                        "memory_use": 32412}
+                        "memory_use": self.memory_use}
                 self.redis_trig.xadd('trigger',data)
                 try:
                     os.remove(full_path)
@@ -486,37 +506,6 @@ class FocasDriver(object):
                 break
 
         logging.info("✅ sync_programs() done")
-
-
-    def drive_memory(self,drive_name="DATA_SV"):
-
-        pdf_inf = ODBPDFINF()
-        size_kind = ctypes.c_short(3)
-        ret = fwlib.cnc_rdpdf_inf(
-                self.handle, 
-                drive_name.encode("shift-jis", errors="replace"), 
-                size_kind, 
-                ctypes.byref(pdf_inf)
-            )
-        if ret == 0:
-            total_space = pdf_inf.all_page
-            used_space = pdf_inf.used_page
-            free_space = total_space - used_space  # Total madhun Used minus kela
-            
-            logging.info(f"Drive {drive_name} Memory Info Read Successfully.")
-            
-            return {
-                "status": "SUCCESS",
-                "drive": drive_name,
-                "total_mb": total_space,
-                "used_mb": used_space,
-                "free_mb": free_space,
-                "unit": "MB"
-            }
-        else:
-            logging.error(f"cnc_rdpdf_inf failed with error code: {ret}")
-            return {"status": "FOCAS_ERROR", "error_code": ret}
-
 
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
