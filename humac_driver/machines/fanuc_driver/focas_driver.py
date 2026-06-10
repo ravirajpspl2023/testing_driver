@@ -55,6 +55,7 @@ class FocasDriver(object):
         self.lock = threading.Lock()
         self.block_thread = BlockThread(config) 
         self.file_downloader = S3Downloader()
+
         self.connect()
     
     def connect(self,):
@@ -466,6 +467,7 @@ class FocasDriver(object):
                         "edgeid": self.edgeid,
                         "filename": fname,
                         'drive': 'DATA_SV',
+                        "tenantID" : TENANT_ID,
                         "memory_use": 32412}
                 self.redis_trig.xadd('trigger',data)
                 try:

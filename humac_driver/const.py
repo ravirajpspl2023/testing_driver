@@ -10,6 +10,7 @@ FILE_NAME_LIN = "libfwlib32-linux-armv7.so.1.0.5"
 MQTT_HOST = "216.48.182.104"
 MQTT_PORT = 1883
 # TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
+TENANT_ID = "75b9b471-6f73-4193-bcd0-196b9d343fba"
 TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
 TOPIC_TRIG = "pspl-iot/telemetry_cnc/trigger"
