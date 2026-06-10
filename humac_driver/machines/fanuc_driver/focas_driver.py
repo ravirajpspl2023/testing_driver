@@ -487,6 +487,37 @@ class FocasDriver(object):
 
         logging.info("✅ sync_programs() done")
 
+
+    def drive_memory(self,drive_name="DATA_SV"):
+
+        pdf_inf = ODBPDFINF()
+        size_kind = ctypes.c_short(3)
+        ret = fwlib.cnc_rdpdf_inf(
+                self.handle, 
+                drive_name.encode("shift-jis", errors="replace"), 
+                size_kind, 
+                ctypes.byref(pdf_inf)
+            )
+        if ret == 0:
+            total_space = pdf_inf.all_page
+            used_space = pdf_inf.used_page
+            free_space = total_space - used_space  # Total madhun Used minus kela
+            
+            logging.info(f"Drive {drive_name} Memory Info Read Successfully.")
+            
+            return {
+                "status": "SUCCESS",
+                "drive": drive_name,
+                "total_mb": total_space,
+                "used_mb": used_space,
+                "free_mb": free_space,
+                "unit": "MB"
+            }
+        else:
+            logging.error(f"cnc_rdpdf_inf failed with error code: {ret}")
+            return {"status": "FOCAS_ERROR", "error_code": ret}
+
+
     def disconnect(self,):
         if self.handle != -16 or self.handle is None:
             fwlib.cnc_freelibhndl(self.handle)

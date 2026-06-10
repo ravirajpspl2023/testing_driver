@@ -498,3 +498,12 @@ class OUT_DSFILE(ctypes.Structure):
         ("file", ctypes.c_char * 36),
         ("info", ctypes.c_char * 128),
     ]
+
+
+class ODBPDFINF(ctypes.Structure):
+    _fields_= [
+        ("used_page", ctypes.c_long),  # Vaparleli जागा (Size in MB/KB/Bytes)
+        ("all_page", ctypes.c_long),   # Total जागा (Size in MB/KB/Bytes)
+        ("used_dir", ctypes.c_long),   # Current folders chi sankhya
+        ("all_dir", ctypes.c_long)     # Maximum folder chi limit')
+    ]

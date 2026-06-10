@@ -31,9 +31,11 @@ class Machine(mp.Process):
         self.driver = FocasDriver(self.config)
         try:           
             pointer = self.driver.get_selected_dnc_file("DATA_SV")
-            logging.info(f"Initial main program: {pointer}")  
+            logging.info(f"Initial main program: {pointer}")
+            memory = self.driver.drive_memory()  
+            logging.info(memory)
             while True:
-                self.driver.sync_programs()
+                # self.driver.sync_programs()
                 data = self.driver.get_cnc_program_detais()
                 start_time = time.time()
                 if self.MainProgram != data.get('mdata'):
