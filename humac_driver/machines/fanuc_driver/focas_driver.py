@@ -407,15 +407,15 @@ class FocasDriver(object):
             used_space = pdf_inf.used_page
             free_space = total_space - used_space  # Total madhun Used minus kela
             if total_space > 0:
-                used_percentage = round((used_space / total_space) * 100, 2)
+                used_percentage = int(round((used_space / total_space) * 100, 2))
                 if self.memory_use != used_percentage:
                     self.memory_use = used_percentage
                     logging.info(f"total_space: {total_space} | used_space: {used_space} | free_space: {free_space}")
             else:
-                self.memory_use = 0.0
+                self.memory_use = 0
         else:
             logging.error(f"cnc_rdpdf_inf failed with error code: {ret}")
-            self.memory_use = 0.0
+            self.memory_use = 0
         
     def sync_programs(self):
         """
@@ -478,8 +478,8 @@ class FocasDriver(object):
                 continue
             
             logging.info(f"Sending → {fname}")
-            # success = self._send_program_to_machine(full_path)
-            success = True
+            success = self._send_program_to_machine(full_path)
+            # success = True
 
             if success:
                 logging.info(f"✅ Sent: {fname}")
