@@ -133,8 +133,8 @@ class BlockThread(threading.Thread):
                     gcode_data['time'] = round(time.perf_counter()-start_time, 4)
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
-                    # gcode_data['program_No'] = CNC.PROGRAME_NAME
-                    gcode_data['program_No'] = self.program_name()
+                    gcode_data['program_No'] = CNC.PROGRAME_NAME
+                    # gcode_data['program_No'] = self.program_name()
                     gcode_data['edgeid'] = self.edgeid
                     self.previous_block = self.blk_no.value
                     # logging.info(f"{gcode_data}")
