@@ -25,6 +25,9 @@ class SqliteConnection:
 
             self.conn = sqlite3.connect(self.db_file, check_same_thread=False, timeout=30)
             self.conn.row_factory = sqlite3.Row
+            self.conn.execute("PRAGMA journal_mode=WAL;")
+            self.conn.execute("PRAGMA synchronous=NORMAL;")
+            self.conn.execute("PRAGMA busy_timeout=30000;")
             self._init_db()
             self.logger.info(f"Successfully connected to SQLite: {self.db_file}")
             self.create_group()

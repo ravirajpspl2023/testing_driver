@@ -11,9 +11,10 @@ MQTT_HOST = "216.48.182.104"
 MQTT_PORT = 1883
 # TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TENANT_ID = "7444e80c-9d00-428e-a45c-b02364772ced"
-TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
-TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
-TOPIC_TRIG = "pspl-iot/telemetry_cnc/trigger"
+# pspl-iot
+TOPIC_PRO = "humac/telemetry_cnc/programe"
+TOPIC_BLK = "humac/telemetry_cnc/block"
+TOPIC_TRIG = "humac/telemetry_cnc/trigger"
 MQTT_PASS = None
 MQTT_CLI = "FDPLVMC01"
 
