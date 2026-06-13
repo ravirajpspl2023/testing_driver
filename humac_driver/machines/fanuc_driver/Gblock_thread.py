@@ -10,7 +10,7 @@ from functools import partial
 from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
-from humac_driver.database.redis_client import RedisConnection
+from humac_driver.database.db_client import DbClientFactory
 from multiprocessing import Queue
 import logging
 from humac_driver.const import *
@@ -49,7 +49,7 @@ class BlockThread(threading.Thread):
         self.edgeid = config['edgid']
         self.handle = None
         self._stop_event = threading.Event()
-        self.redis=  RedisConnection("block").connect()
+        self.redis=  DbClientFactory.get_client("block")
         self.drive = "DATA_SV"
         self.previous_block = -1
         self.blk_no = c_long()

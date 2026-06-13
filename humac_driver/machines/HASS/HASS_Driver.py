@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import threading
 from humac_driver.machines.HASS.MT_Connecte import MTConnecte
-from humac_driver.database.redis_client import RedisConnection
+from humac_driver.database.db_client import DbClientFactory
 from humac_driver.const import *
 from multiprocessing import Queue
 import datetime
@@ -45,7 +45,7 @@ class HassDriver(mp.Process):
         self.program_event = Queue(maxsize=102400)
         self.lock          = threading.Lock()
 
-        self.redis=  RedisConnection("program").connect()
+        self.redis=  DbClientFactory.get_client("program")
 
         # self.mqtt_sender = MqttSender(self.machineid, self.event_queue, self.block_queue)
         # self.MT_connecte = MTConnecte(self.config, self.program_event,self.block_queue)

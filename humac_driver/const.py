@@ -17,6 +17,10 @@ TOPIC_TRIG = "pspl-iot/telemetry_cnc/trigger"
 MQTT_PASS = None
 MQTT_CLI = "FDPLVMC01"
 
+# Database backend selection: 'redis' or 'sqlite'
+DATABASE_TYPE = "sqlite"
+SQLITE_DB_FILE = "./humac_driver/database/humac.db"
+
 config = {
         "machines":[
            {"fanuc":{"ip":"192.168.0.51", "port":8193,"timeout":5,"edgid" :"ed4200018" , "machineid":"FDPLVMC01"}},

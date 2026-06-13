@@ -4,7 +4,7 @@ from humac_driver.const import *
 import xml.etree.ElementTree as ET
 from multiprocessing import Queue
 import requests
-from humac_driver.database.redis_client import RedisConnection
+from humac_driver.database.db_client import DbClientFactory
 import datetime
 import os
 from time import time_ns,sleep ,time
@@ -29,7 +29,7 @@ class MTConnecte(mp.Process):
         self.downloaded_program = None
         self.last_downloaded = 0
         self.program_state = None
-        self.redis=  RedisConnection("block").connect()
+        self.redis=  DbClientFactory.get_client("block")
         self.start()  # Safe now
 
     def fetch_cnc_data(self,url):

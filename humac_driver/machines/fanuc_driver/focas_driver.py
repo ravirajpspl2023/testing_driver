@@ -8,7 +8,7 @@ from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
 from humac_driver.machines.fanuc_driver.Gblock_thread import BlockThread
-from humac_driver.database.redis_client import RedisConnection
+from humac_driver.database.db_client import DbClientFactory
 from humac_driver.machines.files_download.downloader import S3Downloader
 import threading
 import logging
@@ -49,8 +49,8 @@ class FocasDriver(object):
         self.handle = None
         self.previous_program_number = None
         self.edgeid = config['edgid']
-        self.redis=  RedisConnection("program").connect()
-        self.redis_trig = RedisConnection("trigger").connect()
+        self.redis=  DbClientFactory.get_client("program")
+        self.redis_trig = DbClientFactory.get_client("trigger")
         self.previous_date = None
         self.lock = threading.Lock()
         self.block_thread = BlockThread(config) 

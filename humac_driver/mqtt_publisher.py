@@ -1,6 +1,6 @@
 from multiprocessing import Process, Event
 import ast
-from humac_driver.database.redis_client import RedisConnection
+from humac_driver.database.db_client import DbClientFactory
 import paho.mqtt.client as mqtt
 import logging
 from humac_driver.const import *
@@ -13,7 +13,7 @@ class MqttPublisher(Process):
         super().__init__(name=stream)
         self.stream = stream
         self.logger = logging.getLogger(f"{self.name}_pub")
-        self.redis=  RedisConnection(stream).connect()
+        self.redis=  DbClientFactory.get_client(stream)
         self.group_name = "HumacDriver"
         self.mqtt_client = f"{MQTT_CLI}_{stream}"
         self._stop_event = Event()
