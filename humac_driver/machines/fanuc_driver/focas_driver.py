@@ -86,9 +86,11 @@ class FocasDriver(object):
 
             elapsed = time.time() - start_time
 
-            if result != 0 :
+            if result != 0:
+                logging.error(f"Connection attempt to {self.ip} failed with code {result}, retrying...")
                 time.sleep(10)  # Wait a moment before retrying
-                self.connect()
+                return self.connect()
+
             logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
 
             self.handle = handle.value
@@ -177,7 +179,7 @@ class FocasDriver(object):
         result = fanuc(self.handle,byref(odbpro))
         data.update(odbpro.__dict__)
 
-        if data.get('mdata') == 0:
+        if data.get('mdata') == 0 :
             func = fwlib.cnc_exeprgname
             func.restype = c_short
             programe = ODBEXEPRG()
