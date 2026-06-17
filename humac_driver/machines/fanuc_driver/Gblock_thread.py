@@ -149,7 +149,8 @@ class BlockThread(threading.Thread):
         if ret == 0:
                 dnc_file = file_name_buffer.value.decode('utf-8', errors='ignore').rstrip('\x00').split('/')[-1]  # Get the file name without path
                 return dnc_file
-        
+        if ret == -8:
+            self.connect()
         return None
 
     def run(self):
@@ -171,8 +172,8 @@ class BlockThread(threading.Thread):
                     gcode_data['time'] = round(time.perf_counter()-start_time, 4)
                     start_time= time.perf_counter()
                     gcode_data['block_No'] = self.blk_no.value
-                    gcode_data['program_No'] = CNC.PROGRAME_NAME
-                    # gcode_data['program_No'] = self.program_name()
+                    # gcode_data['program_No'] = CNC.PROGRAME_NAME
+                    gcode_data['program_No'] = self.program_name()
                     gcode_data['edgeid'] = self.edgeid
                     self.previous_block = self.blk_no.value
                     self.redis.xadd("block",gcode_data)
