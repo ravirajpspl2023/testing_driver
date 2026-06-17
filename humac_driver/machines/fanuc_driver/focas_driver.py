@@ -3,7 +3,8 @@ import ctypes
 from ctypes.util import find_library
 from ctypes import *
 import json
-import time 
+import time
+from humac_driver.machines.fanuc_driver.Exceptions  import get_error_message
 from typing import  Dict, Any
 from humac_driver.machines.fanuc_driver.Fwlib32_h import *
 from humac_driver.machines.fanuc_driver.Exceptions import *
@@ -53,23 +54,27 @@ class FocasDriver(object):
         self.redis_trig = DbClientFactory.get_client("trigger")
         self.previous_date = None
         self.lock = threading.Lock()
-        self.block_thread = BlockThread(config) 
+        self.block_thread = BlockThread(config)
         self.file_downloader = S3Downloader()
         self.memory_use = None
 
-        self.connect()
+        if not self.connect():
+            raise ConnectionError(f"Unable to establish FOCAS connection to {self.ip}:{self.port}")
     
     def connect(self,):
         start_time = time.time()
         logging.info(f"connection start {self.ip} | WithTimeOut:{self.timeout} ")
-        if fwlib:
-            if sys.platform == 'linux':
-                fwlib.cnc_startupprocess.restype = c_short
-                fwlib.cnc_startupprocess.argtypes = [c_short, c_char_p]
-                log_file = b"focas.log"
-                init_ret = fwlib.cnc_startupprocess(3, log_file)
-                if init_ret != 0:
-                    logging.error(f"FOCAS init failed with code: {init_ret}")
+        if not fwlib:
+            logging.error("FOCAS library not loaded, cannot connect")
+            return False
+
+        if sys.platform == 'linux':
+            fwlib.cnc_startupprocess.restype = c_short
+            fwlib.cnc_startupprocess.argtypes = [c_short, c_char_p]
+            log_file = b"focas.log"
+            init_ret = fwlib.cnc_startupprocess(3, log_file)
+            if init_ret != 0:
+                logging.error(f"FOCAS init failed with code: {init_ret}")
             
             func = fwlib.cnc_allclibhndl3
             func.argtypes = [
@@ -81,19 +86,26 @@ class FocasDriver(object):
             func.restype = c_short
             
             ip_bytes = self.ip.encode('utf-8')
-            handle = c_ushort(0)            
-            result = func(ip_bytes, self.port, self.timeout, byref(handle)) 
+            handle = c_ushort(0)
 
-            elapsed = time.time() - start_time
+            max_attempts = 3
+            for attempt in range(1, max_attempts + 1):
+                result = func(ip_bytes, self.port, self.timeout, byref(handle))
+                elapsed = time.time() - start_time
 
-            if result != 0:
-                logging.error(f"Connection attempt to {self.ip} failed with code {result}, retrying...")
-                time.sleep(10)  # Wait a moment before retrying
-                return self.connect()
+                if result == 0:
+                    self.handle = handle.value
+                    logging.info(f"Connection {self.ip} succeeded | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
+                    return True
 
-            logging.info(f"Connection {self.ip} result: {result} | Handle: {handle.value} | RequTime:{elapsed:.2f}s")
-
-            self.handle = handle.value
+                logging.error(
+                    f"Connection attempt {attempt}/{max_attempts} to {self.ip} failed with code {result}"
+                )
+                if attempt < max_attempts:
+                    time.sleep(10)
+            logging.error(f"Unable to connect to {self.ip} after {max_attempts} attempts")
+            self.handle = None
+            return False
 
     def get_cnc_programe(self,):
         try:
@@ -170,6 +182,10 @@ class FocasDriver(object):
         
     
     def get_cnc_program_detais(self,):
+        if not self._has_handle():
+            logging.error("Cannot read program details: invalid FOCAS handle")
+            return {}
+
         data = {"ts": time.time_ns() // 1_000_000}
         # self.getProgramName(handle)
         start_time= time.perf_counter()
@@ -394,14 +410,22 @@ class FocasDriver(object):
             return {"status": "EXCEPTION", "error_msg": str(e)}
         
     
+    def _has_handle(self):
+        return self.handle is not None and self.handle != 0
+
     def drive_memory(self,drive_name="DATA_SV"):
+        if not self._has_handle():
+            logging.error("Cannot read drive memory: invalid FOCAS handle")
+            self.memory_use = 0
+            return
 
         pdf_inf = ODBPDFINF()
         size_kind = ctypes.c_short(3)
+        drive_name_bytes = drive_name.encode("shift-jis", errors="replace") + b"\x00"
         ret = fwlib.cnc_rdpdf_inf(
-                self.handle, 
-                drive_name.encode("shift-jis", errors="replace"), 
-                size_kind, 
+                self.handle,
+                drive_name_bytes,
+                size_kind,
                 ctypes.byref(pdf_inf)
             )
         if ret == 0:
@@ -417,6 +441,8 @@ class FocasDriver(object):
                 self.memory_use = 0
         else:
             logging.error(f"cnc_rdpdf_inf failed with error code: {ret}")
+            if ret == -8 :
+                self.connect()
             self.memory_use = 0
         
     def sync_programs(self):
@@ -510,8 +536,14 @@ class FocasDriver(object):
         logging.info("✅ sync_programs() done")
 
     def disconnect(self,):
-        if self.handle != -16 or self.handle is None:
-            fwlib.cnc_freelibhndl(self.handle)
+        if self._has_handle():
+            try:
+                fwlib.cnc_freelibhndl(self.handle)
+                logging.info(f"Freed FOCAS handle {self.handle}")
+            except Exception as e:
+                logging.error(f"Error freeing handle {self.handle}: {e}")
+            finally:
+                self.handle = None
         self.block_thread.stop()
 
 

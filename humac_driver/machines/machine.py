@@ -28,7 +28,12 @@ class Machine(mp.Process):
         self.start()  # Safe now
     def run(self) -> None:
         pid = os.getpid()
-        self.driver = FocasDriver(self.config)
+        try:
+            self.driver = FocasDriver(self.config)
+        except Exception as e:
+            logging.error(f"Driver initialization failed for {self.edgeid}: {e}")
+            return
+
         try:           
             pointer = self.driver.get_selected_dnc_file("DATA_SV")
             logging.info(f"Initial main program: {pointer}")
@@ -56,9 +61,11 @@ class Machine(mp.Process):
                 while time.time()-start_time <= 0.5:
                     pass
                 
-        except Exception or  KeyboardInterrupt as e :
+        except Exception as e:
             logging.info(f"[PID {pid}] Connection failed {self.edgeid}: {e}")
-        self.driver.disconnect()
+        finally:
+            if self.driver:
+                self.driver.disconnect()
 
     def terminate(self) -> None:
         logging.info(f"Terminating machine {self.edgeid}")
