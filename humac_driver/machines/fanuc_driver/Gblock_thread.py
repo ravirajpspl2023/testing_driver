@@ -135,8 +135,8 @@ class BlockThread(threading.Thread):
             return False
         if result == -8:
             self.connect()
-
         return True
+    
     def program_name(self,device_name="DATA_SV"):
         host_number = ctypes.c_short(0)                     # short *host sathi
         file_name_buffer = ctypes.create_string_buffer(256)
