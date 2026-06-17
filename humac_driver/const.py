@@ -16,7 +16,7 @@ TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
 TOPIC_TRIG = "pspl-iot/telemetry_cnc/trigger"
 MQTT_PASS = None
-MQTT_CLI = "SACNC01"
+MQTT_CLI = "ZTPLVMC01"
 
 # Database backend selection: 'redis' or 'sqlite'
 DATABASE_TYPE = "sqlite"
@@ -24,7 +24,7 @@ SQLITE_DB_FILE = "./humac_driver/database/humac.db"
 
 config = {
         "machines":[
-          {"fanuc":{"ip":"192.168.0.2", "port":8193,"timeout":5,"edgid" :"ed4200021" , "machineid":"SACNC01"}},
+          {"fanuc":{"ip":"192.168.0.2", "port":8193,"timeout":5,"edgid" :"ed4200016" , "machineid":"ZTPLVMC01"}},
           #  {"hass":{"ip":"192.168.0.2", "port":8082,"timeout":5,"edgid" :"ed4200022" , "machineid":"SACNC02"}},
         ]
     }
