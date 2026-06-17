@@ -4,7 +4,7 @@ s3:
   aws_secret_access_key: "M7N80RP5ZUNPIRJQ7R46PDYATKHYUXF8F7E5FO7I"
   region_name: "us-east-1"
   bucket: "gcode-to-be-executed"
-  machineid : "FDPLVMC01"
+  machineid : "ZTPLVMC01"
 
 local:
   download_folder: "gcodes"
