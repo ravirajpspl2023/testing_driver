@@ -23,8 +23,8 @@ except ImportError:
 SMB_USERNAME = "haas"
 SMB_PASSWORD = "123456"
 SMB_CLIENT   = "HumacPC"
-SMB_SERVER   = "HAASCNC"
-SMB_SHARE    = "Data"
+SMB_SERVER   = "humac"
+SMB_SHARE    = "data"
 SMB_PORT     = 445
 CHUNK_LINES  = 100    # Fanuc sarkha buffer size
 
