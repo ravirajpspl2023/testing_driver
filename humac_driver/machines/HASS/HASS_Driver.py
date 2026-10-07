@@ -20,11 +20,11 @@ except ImportError:
     SMB_AVAILABLE = False
 
 # SMB config — const.py madhe add karo kiva ithe set karo
-SMB_USERNAME = "haas"
-SMB_PASSWORD = "123456"
+SMB_USERNAME = ""
+SMB_PASSWORD = ""
 SMB_CLIENT   = "HumacPC"
-SMB_SERVER   = "humac"
-SMB_SHARE    = "data"
+SMB_SERVER   = "HUMAC"
+SMB_SHARE    = "Data"
 SMB_PORT     = 445
 CHUNK_LINES  = 100    # Fanuc sarkha buffer size
 

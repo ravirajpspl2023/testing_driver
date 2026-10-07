@@ -42,24 +42,72 @@ class MTConnecte(mp.Process):
             logging.error(f"Error fetching data from CNC")
             return None
     
+    # def parse_mtconnect_xml(self, xml_content):
+    #     """MTConnect XML madhu useful data kadhayche"""
+    #     root = ET.fromstring(xml_content)
+    #     results = {}
+
+    #     for item in root.iter():
+    #         attribs = item.attrib
+    #         if 'dataItemId' in attribs or 'name' in attribs:
+    #             if attribs.get('name', 'unknown') == "Program":
+    #                 results ={
+    #                     'ts': time_ns() // 1_000_000,
+    #                     'name': attribs.get('name', 'unknown'),
+    #                     'id': attribs.get('dataItemId', ''),
+    #                     'value': item.text.strip() if item.text else 'UNAVAILABLE'
+    #                 }
+    #             elif attribs.get('name','unknown') == "RunStatus":
+    #                 self.program_state = item.text.strip() if item.text else "UNAVAILABLE"
+                        
+
+    #     return results
     def parse_mtconnect_xml(self, xml_content):
-        """MTConnect XML madhu useful data kadhayche"""
-        root = ET.fromstring(xml_content)
+        """MTConnect XML madhun Program + RunStatus extract karato"""
+        try:
+            root = ET.fromstring(xml_content)
+        except ET.ParseError as e:
+            logging.error(f"XML Parse Error: {e}")
+            return {}
+
+        # Namespace handle karnya sathi (important)
+        ns = {'m': 'urn:mtconnect.org:MTConnectStreams:1.2'}
+
         results = {}
 
-        for item in root.iter():
-            attribs = item.attrib
-            if 'dataItemId' in attribs or 'name' in attribs:
-                if attribs.get('name', 'unknown') == "Program":
-                    results ={
+        # Method 1: Using namespace (recommended)
+        program_elem = root.find('.//m:Program[@name="Program"]', ns)
+        if program_elem is not None and program_elem.text:
+            results = {
+                'ts': time_ns() // 1_000_000,
+                'name': 'Program',
+                'id': program_elem.get('dataItemId', ''),
+                'value': program_elem.text.strip()
+            }
+
+        # RunStatus (Execution tag)
+        runstatus_elem = root.find('.//m:Execution[@name="RunStatus"]', ns)
+        if runstatus_elem is not None and runstatus_elem.text:
+            self.program_state = runstatus_elem.text.strip()
+        else:
+            self.program_state = "UNAVAILABLE"
+
+        # Fallback: Namespace ignore karun (jar agent different version pathavla tar)
+        if not results:
+            for elem in root.iter():
+                if elem.get('name') == "Program" and elem.text:
+                    results = {
                         'ts': time_ns() // 1_000_000,
-                        'name': attribs.get('name', 'unknown'),
-                        'id': attribs.get('dataItemId', ''),
-                        'value': item.text.strip() if item.text else 'UNAVAILABLE'
+                        'name': 'Program',
+                        'id': elem.get('dataItemId', ''),
+                        'value': elem.text.strip()
                     }
-                elif attribs.get('name','unknown') == "RunStatus":
-                    self.program_state = item.text.strip() if item.text else "UNAVAILABLE"
-                        
+                    break
+
+            for elem in root.iter():
+                if elem.get('name') == "RunStatus" and elem.text:
+                    self.program_state = elem.text.strip()
+                    break
 
         return results
 
