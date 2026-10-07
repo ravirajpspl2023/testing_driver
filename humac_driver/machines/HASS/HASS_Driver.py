@@ -64,7 +64,6 @@ class HassDriver(mp.Process):
             conn = SMBConnection(
                 SMB_USERNAME, SMB_PASSWORD,
                 SMB_CLIENT, SMB_SERVER,
-                use_ntlm_v2=True
             )
             if conn.connect(self.ip, SMB_PORT, timeout=self.timeout):
                 return conn
