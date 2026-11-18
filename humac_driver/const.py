@@ -25,6 +25,6 @@ SQLITE_DB_FILE = "./humac_driver/database/humac.db"
 config = {
         "machines":[
           # {"fanuc":{"ip":"193.168.10.2", "port":8193,"timeout":5,"edgid" :"ed4200007" , "machineid":"GMPLVMC16"}},
-           {"hass":{"ip":"193.168.0.2", "port":8082,"timeout":5,"edgid" :"ed4200112" , "machineid":"ZTPLVMC011"}},
+           {"hass":{"ip":"192.168.0.2", "port":8082,"timeout":5,"edgid" :"ed4200112" , "machineid":"ZTPLVMC011"}},
         ]
     }
