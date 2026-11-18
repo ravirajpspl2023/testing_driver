@@ -10,13 +10,13 @@ FILE_NAME_LIN = "libfwlib32-linux-armv7.so.1.0.5"
 MQTT_HOST = "216.48.182.104"
 MQTT_PORT = 1883
 # TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
-TENANT_ID = "0942977d-3303-4618-8f6d-3b6033d2b273"
+TENANT_ID = "8d335439-1fcf-4af7-bce3-2f231b8a53d8"
 # pspl-iot
 TOPIC_PRO = "pspl-iot/telemetry_cnc/programe"
 TOPIC_BLK = "pspl-iot/telemetry_cnc/block"
 TOPIC_TRIG = "pspl-iot/telemetry_cnc/trigger"
 MQTT_PASS = None
-MQTT_CLI = "GMPLVMC_06"
+MQTT_CLI = "ZTPLVMC011"
 
 # Database backend selection: 'redis' or 'sqlite'
 DATABASE_TYPE = "sqlite"
@@ -25,6 +25,6 @@ SQLITE_DB_FILE = "./humac_driver/database/humac.db"
 config = {
         "machines":[
           # {"fanuc":{"ip":"193.168.10.2", "port":8193,"timeout":5,"edgid" :"ed4200007" , "machineid":"GMPLVMC16"}},
-           {"hass":{"ip":"193.168.10.2", "port":8082,"timeout":5,"edgid" :"ed4200008" , "machineid":"GMPLVMC_06"}},
+           {"hass":{"ip":"193.168.0.2", "port":8082,"timeout":5,"edgid" :"ed4200112" , "machineid":"ZTPLVMC011"}},
         ]
     }
